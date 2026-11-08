@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Christmas Tree</title>
+<link rel="stylesheet" href="base.css">
+<style>
+#stage { padding-top: 4px; font-family: 'Fredoka', system-ui, sans-serif; color: #1F1B2E; }
+.scene { position: relative; }
+.tree { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; animation: grow .7s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes grow { 0% { transform: translateY(16px) scale(.94); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.tree svg { display: block; overflow: visible; }
+.star { transform-box: fill-box; transform-origin: 50% 55%; animation: twinkle 2.4s ease-in-out infinite; }
+@keyframes twinkle { 0%, 100% { transform: rotate(-6deg) scale(1); } 50% { transform: rotate(6deg) scale(1.08); } }
+.bulb { animation: blink 1.6s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+
+.hang { position: absolute; width: 48px; height: 56px; margin-left: -24px; animation: drop .55s cubic-bezier(.22, 1, .36, 1) both; animation-delay: var(--d); }
+@keyframes drop { 0% { transform: translateY(-14px) scale(.9); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.hang::before { /* the thread */
+  content: ''; position: absolute; left: 23px; top: 0; width: 2px; height: 9px; background: #1F1B2E; opacity: .6;
+}
+.bauble {
+  position: absolute; left: 0; top: 8px; width: 48px; height: 48px; box-sizing: border-box;
+  border-radius: 50%; border: 3px solid #1F1B2E; background: var(--c);
+  box-shadow: inset -5px -6px 0 rgba(0, 0, 0, .14);
+  transform-origin: 50% 0;
+}
+.bauble::before { /* cap */
+  content: ''; position: absolute; left: 50%; top: -9px; width: 14px; height: 9px; margin-left: -7px;
+  box-sizing: border-box; background: #E3C062; border: 2px solid #1F1B2E; border-radius: 3px;
+}
+.bauble::after { /* shine */
+  content: ''; position: absolute; left: 7px; top: 6px; width: 9px; height: 6px; border-radius: 50%;
+  background: rgba(255, 255, 255, .75); transform: rotate(-30deg);
+}
+.bauble > img { position: absolute; left: 8px; top: 8px; width: 26px; height: 26px; }
+
+.flake { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 1.5px #9CC3E6;
+  animation: snow var(--t) linear infinite; animation-delay: var(--d); opacity: .9; }
+@keyframes snow { 0% { transform: translate(0, -10px); opacity: 0; } 10% { opacity: .9; } 100% { transform: translate(var(--dx), var(--fall)); opacity: 0; } }
+
+.tag {
+  position: absolute; left: 50%; transform: translateX(-50%) rotate(-3deg);
+  background: #FFFDF7; border: 2px solid #1F1B2E; border-radius: 6px;
+  padding: 4px 14px 4px 22px; font-size: 14px; font-weight: 600; color: #B4321F; white-space: nowrap;
+  box-shadow: 3px 4px 0 rgba(31, 27, 46, .2);
+  animation: tagin .4s ease-out .45s both;
+}
+@keyframes tagin { from { opacity: 0; } to { opacity: 1; } }
+.tag::before { content: ''; position: absolute; left: 7px; top: 50%; width: 7px; height: 7px; margin-top: -4px; border-radius: 50%; border: 2px solid #1F1B2E; box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="buddy.js"></script>
+<script>
+const INK = '#1F1B2E';
+const BAUBLES = ['#E5484D', '#FFD23F', '#4AA3FF', '#B97DFF', '#FF8FB1', '#5FD38D', '#FF9A3D', '#F4F4F4'];
+const LIGHTS = ['#FF5F57', '#FFD23F', '#5FD3FF', '#9BE15D', '#FF8FB1'];
+const ROW = 58, GAP = 58, TOP = 46;
+let tag;
+
+/** Ornament rows, top down: 1, 2, 3… with the last row centred. */
+function rowsFor(n) {
+  const rows = [];
+  for (let k = 1; n > 0; k++) { rows.push(Math.min(k, n)); n -= k; }
+  return rows;
+}
+
+/** A tiered tree outline: each tier steps out, then tucks back in under the next one. */
+function treePath(cx, top, height, half, tiers) {
+  const right = [];
+  for (let j = 1; j <= tiers; j++) {
+    const y = top + height * j / tiers;
+    const hw = half * (0.35 + 0.65 * j / tiers);
+    right.push([cx + hw, y]);
+    if (j < tiers) right.push([cx + hw * 0.55, y - 6]);
+  }
+  const left = right.map(([x, y]) => [2 * cx - x, y]).reverse();
+  const pts = [[cx, top], ...right, ...left];
+  return 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') + ' Z';
+}
+
+function star(cx, cy, r) {
+  let d = '';
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+    d += (i ? 'L' : 'M') + (cx + rr * Math.cos(a)).toFixed(1) + ' ' + (cy + rr * Math.sin(a)).toFixed(1);
+  }
+  return d + 'Z';
+}
+
+Buddy.theme({
+  render(apps, stage, h) {
+    const rows = rowsFor(apps.length);
+    const widest = Math.max(...rows);
+    const treeH = TOP + rows.length * ROW + 30;
+    const half = Math.max(110, widest * GAP * 0.62 + 50);
+    const W = half * 2 + 40, cx = W / 2;
+    const tiers = Math.min(5, Math.max(2, Math.ceil(rows.length / 2) + 1));
+    const trunkTop = treeH, presentsY = treeH + 18;
+    const H = presentsY + 60 + 44;
+
+    // Tree, star, garland with lights, trunk and presents in one SVG.
+    let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+    svg += `<rect x="${cx - 16}" y="${trunkTop - 6}" width="32" height="34" rx="4" fill="#9C6337" stroke="${INK}" stroke-width="3"/>`;
+    const outline = treePath(cx, 10, treeH - 10, half, tiers);
+    svg += `<path d="${outline}" fill="#2E7D3A" stroke="none" transform="translate(5 5)"/>`;
+    svg += `<path d="${outline}" fill="#3FA34D" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`;
+    // Garland swags between ornament rows, with blinking bulbs.
+    for (let i = 1; i < rows.length; i++) {
+      const y = TOP + i * ROW - 6;
+      const w = half * (0.35 + 0.6 * (y / treeH));
+      const x0 = cx - w * 0.85, x1 = cx + w * 0.85;
+      svg += `<path d="M${x0} ${y - 8} Q${cx} ${y + 18} ${x1} ${y - 8}" fill="none" stroke="#FFD23F" stroke-width="3" stroke-dasharray="2 5" stroke-linecap="round"/>`;
+      const bulbs = Math.max(3, Math.round((x1 - x0) / 34));
+      for (let b = 0; b <= bulbs; b++) {
+        const t = b / bulbs, bx = x0 + (x1 - x0) * t, by = (1 - t) * (1 - t) * (y - 8) + 2 * (1 - t) * t * (y + 18) + t * t * (y - 8);
+        svg += `<circle class="bulb" cx="${bx.toFixed(1)}" cy="${(by + 3).toFixed(1)}" r="4" fill="${LIGHTS[(b + i) % LIGHTS.length]}" stroke="${INK}" stroke-width="1.5" style="animation-delay:${(-(b * 0.37 + i * 0.21) % 1.6).toFixed(2)}s"/>`;
+      }
+    }
+    svg += `<path class="star" d="${star(cx, 16, 20)}" fill="#FFD23F" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+    // Presents
+    const gifts = [[-96, 44, 40, '#E5484D', '#FFD23F'], [-50, 34, 30, '#4AA3FF', '#FFFDF7'], [26, 52, 44, '#B97DFF', '#5FD38D'], [80, 36, 34, '#FFD23F', '#E5484D']];
+    for (const [dx, w, hh, c, rib] of gifts) {
+      const x = cx + dx, y = presentsY + 50 - hh;
+      svg += `<rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="4" fill="${c}" stroke="${INK}" stroke-width="3"/>`;
+      svg += `<rect x="${x + w / 2 - 4}" y="${y}" width="8" height="${hh}" fill="${rib}" stroke="${INK}" stroke-width="2"/>`;
+      svg += `<path d="M${x + w / 2} ${y} q-12 -12 -14 -2 q6 6 14 2 q12 -12 14 -2 q-6 6 -14 2" fill="${rib}" stroke="${INK}" stroke-width="2"/>`;
+    }
+    svg += `</svg>`;
+
+    const scene = h.el('div', { class: 'scene', style: `width:${W}px;height:${H}px` });
+    scene.append(h.el('div', { class: 'tree', html: svg }));
+
+    // Ornaments
+    let i = 0;
+    rows.forEach((count, r) => {
+      const y = TOP + r * ROW;
+      for (let k = 0; k < count; k++) {
+        const app = apps[i];
+        const x = cx + (k - (count - 1) / 2) * GAP;
+        const hang = h.el('div', { class: 'hang', 'data-scope': '', style: `left:${x}px;top:${y}px`, vars: { d: (0.25 + Math.min(i * 0.035, 0.9)).toFixed(2) + 's' } });
+        hang.append(h.app(app, { class: 'bauble', vars: { c: h.pick(BAUBLES, i * 3 + r) } }));
+        scene.append(hang);
+        i++;
+      }
+    });
+
+    // A little snow
+    for (let s = 0; s < 14; s++) {
+      scene.append(h.el('div', { class: 'flake', style: `left:${(h.rand(s, 1) * W).toFixed(0)}px;top:${(h.rand(s, 2) * H * 0.5).toFixed(0)}px`,
+        vars: { t: (4 + h.rand(s, 3) * 3).toFixed(1) + 's', d: (-h.rand(s, 4) * 6).toFixed(1) + 's', dx: ((h.rand(s, 5) - 0.5) * 40).toFixed(0) + 'px', fall: (H * 0.5).toFixed(0) + 'px' } }));
+    }
+
+    tag = h.el('div', { class: 'tag', style: `top:${presentsY + 62}px` });
+    scene.append(tag);
+    stage.append(scene);
+  },
+  hot(app) {
+    if (tag) tag.textContent = app ? app.name : 'Merry menu bar!';
+  },
+});
+</script>
+</body>
+</html>

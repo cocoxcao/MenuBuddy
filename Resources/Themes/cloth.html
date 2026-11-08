@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hanging Apps</title>
+<link rel="stylesheet" href="base.css">
+<style>
+#stage { padding-top: 6px; font-family: 'Fredoka', system-ui, sans-serif; color: #1F1B2E; }
+.rails { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.rail { display: flex; flex-direction: column; align-items: center; }
+.rod {
+  position: relative; z-index: 2; height: 12px; box-sizing: border-box;
+  border-radius: 6px; background: #C8923F; border: 2px solid #1F1B2E;
+}
+.rod::before, .rod::after {
+  content: ''; position: absolute; top: -5px; width: 18px; height: 18px; box-sizing: border-box;
+  border-radius: 50%; background: #E0A42B; border: 2px solid #1F1B2E;
+}
+.rod::before { left: -10px; }
+.rod::after { right: -10px; }
+.hangers { display: flex; gap: 6px; margin-top: -9px; position: relative; z-index: 3; }
+.hanger { animation: hang .7s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: var(--drop); }
+@keyframes hang { 0% { transform: translateY(-40px) rotate(-14deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.swing {
+  position: relative; width: 60px; height: 84px;
+  transform-origin: 50% 0; animation: swing var(--period) ease-in-out infinite; animation-delay: var(--sway);
+}
+@keyframes swing { 0%, 100% { transform: rotate(4deg); } 50% { transform: rotate(-4deg); } }
+.swing > svg { position: absolute; left: 0; top: 0; }
+.item {
+  position: absolute; left: 7px; top: 27px; width: 46px; height: 46px;
+  filter: drop-shadow(0 4px 3px rgba(31, 27, 46, .25));
+  transform-origin: 50% 0;
+}
+/* A little wooden peg holding the app on the hanger's bar. */
+.peg {
+  position: absolute; left: 26px; top: 18px; width: 8px; height: 16px; z-index: 2;
+  box-sizing: border-box; background: #E3B26A; border: 2px solid #1F1B2E; border-radius: 3px;
+}
+.peg::after { content: ''; position: absolute; left: 1px; right: 1px; top: 5px; height: 2px; background: #1F1B2E; opacity: .55; }
+.tag {
+  margin-top: 22px; background: #FFFDF7; border: 2px solid #1F1B2E; border-radius: 999px;
+  padding: 3px 14px; font-size: 14px; font-weight: 600; color: #7A3E12; white-space: nowrap;
+  box-shadow: 3px 4px 0 rgba(31, 27, 46, .18);
+}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="buddy.js"></script>
+<script>
+const HANGER = '<svg aria-hidden="true" width="60" height="28" viewBox="0 0 60 28"><path d="M30 13V9a4 4 0 1 0-4-4" fill="none" stroke="#5E6B7A" stroke-width="2.4" stroke-linecap="round"/><path d="M30 13L5 24.5h50z" fill="none" stroke="#5E6B7A" stroke-width="2.4" stroke-linejoin="round"/></svg>';
+let tag;
+
+Buddy.theme({
+  render(apps, stage, h) {
+    const rails = h.el('div', { class: 'rails' });
+    let i = 0;
+    for (const row of h.rows(apps, 13)) {
+      const hangers = h.el('div', { class: 'hangers' });
+      for (const app of row) {
+        hangers.append(
+          h.el('div', { class: 'hanger', 'data-scope': '', vars: { drop: (i * 0.05).toFixed(2) + 's' } },
+            h.el('div', { class: 'swing', vars: { sway: (-(i * 0.37) % 3).toFixed(2) + 's', period: (2.4 + (i % 4) * 0.25).toFixed(2) + 's' } },
+              h.frag(HANGER), h.app(app, { class: 'item' }), h.el('div', { class: 'peg' })
+            )
+          )
+        );
+        i++;
+      }
+      const width = row.length * 66 - 6 + 40;
+      rails.append(h.el('div', { class: 'rail' }, h.el('div', { class: 'rod', style: 'width:' + width + 'px' }), hangers));
+    }
+    tag = h.el('div', { class: 'tag' });
+    rails.append(tag);
+    stage.append(rails);
+  },
+  hot(app) {
+    if (tag) tag.textContent = app ? app.name : 'pick one';
+  },
+});
+</script>
+</body>
+</html>

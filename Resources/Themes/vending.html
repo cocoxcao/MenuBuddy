@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vending Machine</title>
+<link rel="stylesheet" href="base.css">
+<style>
+#stage { padding-top: 10px; font-family: 'Fredoka', system-ui, sans-serif; color: #1F1B2E; }
+.machine {
+  position: relative;
+  box-sizing: border-box; padding: 14px; background: #F0533F; border: 3px solid #1F1B2E;
+  border-radius: 20px; box-shadow: 7px 9px 0 #1F1B2E;
+  display: flex; flex-direction: column; gap: 12px;
+  animation: thunk .6s cubic-bezier(.3, 1.3, .5, 1) both;
+}
+@keyframes thunk {
+  0% { transform: translateY(-70px); opacity: 0; }
+  60% { transform: translateY(6px); opacity: 1; }
+  80% { transform: translateY(-2px); }
+  100% { transform: none; }
+}
+.sign {
+  background: #1F1B2E; color: #FFE45C; border-radius: 10px; padding: 5px 0;
+  text-align: center; font-size: 20px; font-weight: 700; letter-spacing: .08em;
+}
+.body { display: flex; gap: 12px; }
+.window {
+  position: relative; background: #CDEEFF; border: 3px solid #1F1B2E; border-radius: 12px;
+  padding: 10px 8px 6px; display: grid; grid-template-columns: repeat(var(--cols), 68px);
+  row-gap: 6px; align-content: start;
+}
+.slot {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border-bottom: 3px solid #8FB8CF; padding-bottom: 4px;
+}
+.slot .app { width: 40px; height: 40px; }
+.slot.picked .code { background: #FFE45C; }
+.coil { transform-origin: 50% 50%; }
+.coil.spin { animation: spin .5s linear 2; }
+@keyframes spin { to { transform: rotateX(360deg); } }
+.sold {
+  height: 40px; display: flex; align-items: center; font-size: 11px; font-weight: 700;
+  color: #B42318; transform: rotate(-10deg);
+}
+.code {
+  font-size: 10px; font-weight: 700; background: #FFFFFF; border: 1.5px solid #1F1B2E;
+  border-radius: 4px; padding: 0 4px; white-space: nowrap;
+}
+.code b { color: #B42318; font-weight: 700; }
+.glass {
+  position: absolute; inset: 0; pointer-events: none; border-radius: 9px;
+  background: linear-gradient(115deg, transparent 0 28%, rgba(255, 255, 255, .45) 28% 36%, transparent 36% 100%);
+}
+.side { width: 104px; display: flex; flex-direction: column; gap: 10px; }
+.lcd {
+  background: #B8F28C; border: 3px solid #1F1B2E; border-radius: 8px; padding: 6px 8px;
+  min-height: 80px; box-sizing: border-box; color: #12330E; font-family: 'Courier New', monospace;
+}
+.lcd-code { font-size: 24px; font-weight: 700; line-height: 1; }
+.lcd-name { font-size: 12px; font-weight: 700; margin-top: 4px; line-height: 1.2; overflow-wrap: anywhere; }
+.lcd-money { font-size: 11px; font-weight: 700; margin-top: 3px; line-height: 1.2; }
+.lcd.flash { animation: flash .5s steps(2) 2; }
+@keyframes flash { 50% { background: #E3FFC9; } }
+.keys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.key {
+  height: 24px; border-radius: 6px; background: #FFFFFF; border: 2px solid #1F1B2E;
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+  box-shadow: 0 2px 0 #1F1B2E;
+}
+.key.ok { background: #FFE45C; grid-column: span 2; font-size: 11px; }
+.key.pressed { box-shadow: none; }
+.coin {
+  position: relative; background: #D9DEE3; border: 2px solid #1F1B2E; border-radius: 8px; padding: 8px 0;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; overflow: hidden;
+}
+.coin i { position: relative; z-index: 2; display: block; width: 5px; height: 22px; border-radius: 3px; background: #1F1B2E; }
+.coin span { font-size: 11px; font-weight: 700; }
+.coin.empty span { animation: blinky 1s steps(2) infinite; }
+@keyframes blinky { 50% { opacity: .25; } }
+.coin-drop {
+  position: absolute; z-index: 1; left: 50%; top: 9px; width: 18px; height: 18px; margin-left: -9px;
+  box-sizing: border-box; border-radius: 50%; background: #FFD23F; border: 2px solid #8A6A12;
+  font-size: 10px; font-weight: 700; color: #8A6A12; display: flex; align-items: center; justify-content: center;
+  animation: insert .5s cubic-bezier(.5, 0, .7, 1) both;
+}
+@keyframes insert {
+  0% { transform: translate(-30px, -14px) rotate(-30deg) scaleX(1); opacity: 1; }
+  55% { transform: translate(0, -2px) rotate(0) scaleX(.6); opacity: 1; }
+  100% { transform: translate(0, 12px) scaleX(.15); opacity: 0; }
+}
+.flap {
+  position: relative; height: 46px; background: #1F1B2E; border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; color: #FFFFFF; font-weight: 700; font-size: 14px; letter-spacing: .3em;
+}
+.tray { position: absolute; left: 14px; top: 3px; width: 40px; height: 40px; }
+.tray .app { width: 40px; height: 40px; animation: land .4s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes land { 0% { transform: translateY(-14px) scale(.8); } 100% { transform: none; } }
+.falling { position: absolute; z-index: 40; width: 40px; height: 40px; pointer-events: none; }
+.falling img { width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="buddy.js"></script>
+<script>
+// Keypad, coins and the tray. Typing a code (letter, then number) picks a slot; each click on the
+// coin slot pays $1 (up to $15); OK vends the app into the tray, where a click opens it. Clicking an
+// app in the window still opens it straight away.
+const MAX_CREDIT = 15;
+let H, apps = [], codes = {}, byCode = {};
+let lcd, lcdCode, lcdName, lcdMoney, coinBox, tray, machine;
+let entry = '', picked = null, credit = 0, vended = null, message = null, messageTimer = 0;
+
+function columnsFor(n) {
+  if (n <= 3) return 3;
+  if (n <= 12) return 4;
+  if (n <= 20) return 5;
+  if (n <= 30) return 6;
+  return 8;
+}
+
+/** $1–$15, the same for an app every time. */
+function price(app) {
+  let x = 7;
+  for (const ch of app.name) x = (x * 31 + ch.charCodeAt(0)) % 9973;
+  return 1 + (x % 15);
+}
+
+function showLCD() {
+  if (!lcd) return;
+  if (picked) {
+    lcdCode.textContent = codes[picked.id];
+    lcdName.textContent = picked.name;
+    lcdMoney.textContent = message || ('$' + price(picked) + ' · paid $' + credit);
+  } else if (entry) {
+    lcdCode.textContent = entry.length === 1 ? entry + '_' : entry;
+    lcdName.textContent = message || (entry.length === 1 ? 'Now a number' : 'SOLD OUT');
+    lcdMoney.textContent = credit ? 'Paid $' + credit : '';
+  } else {
+    lcdCode.textContent = '--';
+    lcdName.textContent = message || 'Pick a snack!';
+    lcdMoney.textContent = credit ? 'Paid $' + credit : '';
+  }
+  coinBox.classList.toggle('empty', credit === 0);
+  coinBox.querySelector('span').textContent = credit ? '$' + credit : '$1 COINS';
+  document.querySelectorAll('.slot.picked').forEach((n) => n.classList.remove('picked'));
+  if (picked) { const s = document.querySelector('.slot[data-code="' + codes[picked.id] + '"]'); if (s) s.classList.add('picked'); }
+}
+
+/** A short note on the screen that clears itself. */
+function say(text) {
+  message = text;
+  clearTimeout(messageTimer);
+  messageTimer = setTimeout(() => { message = null; showLCD(); }, 2500);
+}
+
+function flash(text) {
+  say(text);
+  showLCD();
+  lcd.classList.remove('flash');
+  void lcd.offsetWidth;
+  lcd.classList.add('flash');
+}
+
+function press(key) {
+  message = null;
+  if (/[A-J]/.test(key)) { entry = key; picked = null; showLCD(); return; }
+  if (entry.length !== 1) { flash('Letter first'); return; }
+  entry += key;
+  picked = byCode[entry] || null;
+  showLCD();
+}
+
+function insertCoin() {
+  if (credit >= MAX_CREDIT) { flash('Max $' + MAX_CREDIT); return; }
+  credit += 1;
+  message = null;
+  coinBox.append(H.el('div', { class: 'coin-drop', text: '$' }));
+  const drops = coinBox.querySelectorAll('.coin-drop');
+  if (drops.length > 3) drops[0].remove();
+  showLCD();
+}
+
+function vend() {
+  if (!picked) { flash(entry ? 'SOLD OUT' : 'Pick a code'); return; }
+  const cost = price(picked);
+  if (credit < cost) { flash('Need $' + (cost - credit) + ' more'); return; }
+  const app = picked;
+  credit -= cost;
+  const change = credit;
+  credit = 0;
+  entry = '';
+  picked = null;
+  say(change ? 'Enjoy! Change $' + change : 'Enjoy!');
+  showLCD();
+
+  // The coil turns, the app drops past the window into the tray.
+  const slot = document.querySelector('.slot[data-code="' + codes[app.id] + '"]');
+  const coil = slot && slot.querySelector('.coil');
+  if (coil) { coil.classList.remove('spin'); void coil.offsetWidth; coil.classList.add('spin'); }
+  const m = machine.getBoundingClientRect();
+  const from = slot ? slot.querySelector('.app').getBoundingClientRect() : m;
+  const to = tray.getBoundingClientRect();
+  const fall = H.el('div', { class: 'falling' }, H.el('img', { src: app.icon, alt: '' }));
+  fall.style.left = (from.left - m.left) + 'px';
+  fall.style.top = (from.top - m.top) + 'px';
+  machine.append(fall);
+  const dx = to.left - from.left, dy = to.top - from.top;
+  const anim = fall.animate([
+    { transform: 'translate(0, 0) rotate(0deg)', offset: 0 },
+    { transform: 'translate(0, 14px) rotate(0deg)', offset: 0.35 },
+    { transform: `translate(${dx * 0.6}px, ${dy * 0.7}px) rotate(-14deg)`, offset: 0.75 },
+    { transform: `translate(${dx}px, ${dy}px) rotate(0deg)`, offset: 1 },
+  ], { duration: 1000, delay: 250, easing: 'ease-in', fill: 'both' });
+  anim.onfinish = () => {
+    fall.remove();
+    vended = app;
+    tray.replaceChildren(H.app(app));
+  };
+}
+
+Buddy.theme({
+  render(list, stage, h) {
+    H = h;
+    apps = list;
+    entry = '';
+    picked = null;
+    message = null;
+    if (vended && !list.some((a) => a.id === vended.id)) vended = null;
+    const cols = columnsFor(list.length);
+    // At least two rows, so a short list still fills the window next to the side panel.
+    const rowCount = Math.max(2, Math.ceil(list.length / cols));
+    const win = h.el('div', { class: 'window', vars: { cols } });
+    codes = {};
+    byCode = {};
+    for (let i = 0; i < rowCount * cols; i++) {
+      const code = 'ABCDEFGHIJ'[Math.floor(i / cols)] + ((i % cols) + 1);
+      const app = list[i];
+      if (app) { codes[app.id] = code; byCode[code] = app; }
+      win.append(
+        h.el('div', { class: 'slot', 'data-code': code },
+          app ? h.app(app) : h.el('div', { class: 'sold', text: 'SOLD OUT' }),
+          h.frag('<svg class="coil" aria-hidden="true" width="44" height="10" viewBox="0 0 44 10"><path d="M2 5q3-5 6 0t6 0 6 0 6 0 6 0 6 0 6 0" stroke="#5E6B7A" stroke-width="2" fill="none"/></svg>'),
+          h.el('span', { class: 'code', html: code + (app ? ' <b>$' + price(app) + '</b>' : '') })
+        )
+      );
+    }
+    win.append(h.el('div', { class: 'glass', 'aria-hidden': 'true' }));
+
+    // Keypad: the letters this machine has rows for, then the numbers it has columns for.
+    const letters = 'ABCDEFGHIJ'.slice(0, rowCount).split('');
+    const numbers = Array.from({ length: cols }, (_, i) => String(i + 1));
+    const keys = [...letters, ...numbers].map((k) => h.el('div', { class: 'key', 'data-action': 'key', 'data-key': k, text: k }));
+    keys.push(h.el('div', { class: 'key ok', 'data-action': 'ok', text: 'OK' }));
+
+    lcdCode = h.el('div', { class: 'lcd-code' });
+    lcdName = h.el('div', { class: 'lcd-name' });
+    lcdMoney = h.el('div', { class: 'lcd-money' });
+    lcd = h.el('div', { class: 'lcd' }, lcdCode, lcdName, lcdMoney);
+    coinBox = h.el('div', { class: 'coin', 'data-action': 'coin' }, h.el('i'), h.el('span'));
+    tray = h.el('div', { class: 'tray' }, vended ? h.app(vended) : null);
+    machine = h.el('div', { class: 'machine' },
+      h.el('div', { class: 'sign', text: 'APP-O-MATIC' }),
+      h.el('div', { class: 'body' }, win, h.el('div', { class: 'side' }, lcd, h.el('div', { class: 'keys' }, keys), coinBox)),
+      h.el('div', { class: 'flap' }, tray, 'PUSH')
+    );
+    stage.append(machine);
+    showLCD();
+  },
+  hot(app) {
+    // While you're typing a code or paying, the screen belongs to that.
+    if (!lcd || entry || picked || message) return;
+    lcdCode.textContent = app ? codes[app.id] || '--' : '--';
+    lcdName.textContent = app ? app.name : 'Pick a snack!';
+    lcdMoney.textContent = app ? '$' + price(app) : (credit ? 'Paid $' + credit : '');
+  },
+  action(name, el) {
+    if (name === 'key') press(el.dataset.key);
+    else if (name === 'coin') insertCoin();
+    else if (name === 'ok') vend();
+  },
+});
+</script>
+</body>
+</html>

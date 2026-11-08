@@ -1,0 +1,114 @@
+/* Shared by every MenuBuddy theme. Fonts ship with the app so themes work offline. */
+@font-face { font-family: 'Fredoka'; src: url(fonts/Fredoka.woff2) format('woff2'); font-weight: 300 700; }
+@font-face { font-family: 'DM Sans'; src: url(fonts/DMSans.woff2) format('woff2'); font-weight: 100 1000; }
+@font-face { font-family: 'Instrument Serif'; src: url(fonts/InstrumentSerif.woff2) format('woff2'); font-style: normal; }
+@font-face { font-family: 'Instrument Serif'; src: url(fonts/InstrumentSerif-Italic.woff2) format('woff2'); font-style: italic; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+  -webkit-font-smoothing: antialiased;
+}
+body.dev { background: #C9D3E3; min-height: 100vh; }
+body.dev.dark { background: #2B2F3A; }
+
+/* The stage is what the panel shows. Its size (padding included) becomes the panel's size.
+   Top padding stays 0 so the theme hangs straight off the menu bar; the sides and bottom leave
+   room for an icon that grows to 2x near an edge. */
+#stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0 40px 40px;
+}
+
+/* Every clickable app. Grows to 2x when the pointer is on it. */
+.app {
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+  transition: scale .32s cubic-bezier(.34, 1.45, .64, 1), filter .32s;
+}
+.app.hot { scale: 2; z-index: 20; filter: drop-shadow(0 6px 9px rgba(20, 16, 34, .32)); }
+.app > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/* A wrapper that must rise above its neighbours while one of its apps is hot (for wrappers that
+   are animated, which traps the app's z-index inside them). */
+[data-scope] { position: relative; z-index: 1; }
+[data-scope].hot-scope { z-index: 30; }
+
+/* Buttons that aren't apps (data-action): keypads, coin slots… */
+[data-action] { cursor: pointer; transition: translate .08s, filter .12s; }
+[data-action].over { filter: brightness(1.08); }
+[data-action].pressed { translate: 0 2px; filter: brightness(.9); }
+
+/* After a rearrange the theme re-renders "quietly": entry animations jump to their end. */
+#stage.quiet *, #stage.quiet *::before, #stage.quiet *::after { animation-delay: -30s !important; }
+
+/* Dragging an app to rearrange or hide it. */
+.app.dragging { opacity: .3; }
+.app.drop-target { scale: 1.18; outline: 3px dashed #FF4F8B; outline-offset: 4px; z-index: 15; }
+body.buddy-dragging, body.buddy-dragging * { cursor: grabbing !important; }
+.buddy-ghost {
+  position: fixed;
+  z-index: 1000;
+  width: 52px;
+  height: 52px;
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  filter: drop-shadow(0 8px 10px rgba(31, 27, 46, .35));
+}
+.buddy-ghost img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.buddy-hide-zone {
+  position: fixed;
+  z-index: 900;
+  left: 50%;
+  bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 2px dashed #FFFDF7;
+  background: #1F1B2E;
+  color: #FFFDF7;
+  font: 600 13px/1 'Fredoka', system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 12px);
+  transition: opacity .18s, transform .18s, background .18s, scale .18s;
+}
+body.buddy-dragging .buddy-hide-zone { opacity: 1; transform: translate(-50%, 0); }
+.buddy-hide-zone.over { background: #D63B57; scale: 1.12; }
+
+/* Fallback message when there is nothing to show. */
+.buddy-empty {
+  margin-top: 14px;
+  max-width: 280px;
+  background: #FFFDF7;
+  color: #1F1B2E;
+  border: 2.5px solid #1F1B2E;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font: 600 14px/1.35 'Fredoka', system-ui, sans-serif;
+  box-shadow: 4px 5px 0 rgba(31, 27, 46, .22);
+  animation: buddy-pop .4s cubic-bezier(.3, 1.6, .5, 1) both;
+}
+@keyframes buddy-pop { 0% { transform: scale(.6); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

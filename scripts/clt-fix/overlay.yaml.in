@@ -1,0 +1,9 @@
+{
+  "version": 0,
+  "case-sensitive": "false",
+  "roots": [
+    { "type": "file",
+      "name": "/Library/Developer/CommandLineTools/usr/include/swift/module.modulemap",
+      "external-contents": "@EMPTY@" }
+  ]
+}

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blueprints</title>
+<link rel="stylesheet" href="base.css">
+<style>
+@font-face { font-family: 'Architects Daughter'; src: url(fonts/ArchitectsDaughter.woff2) format('woff2'); }
+#stage { padding-top: 8px; font-family: 'Architects Daughter', 'Fredoka', system-ui, sans-serif; color: #EAF3FF; }
+
+.paper {
+  position: relative;
+  border-radius: 10px;
+  border: 2px solid #163E73;
+  background-color: #1C4E8F;
+  background-image:
+    linear-gradient(rgba(234, 243, 255, .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(234, 243, 255, .07) 1px, transparent 1px),
+    linear-gradient(rgba(234, 243, 255, .13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(234, 243, 255, .13) 1px, transparent 1px);
+  background-size: 12px 12px, 12px 12px, 60px 60px, 60px 60px;
+  background-position: -1px -1px;
+  box-shadow: 0 12px 26px rgba(10, 20, 40, .38);
+  animation: unroll .35s cubic-bezier(.3, 1.2, .5, 1) both;
+}
+@keyframes unroll { 0% { transform: translateY(-24px) scaleY(.6); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+/* Masking tape on the top corners. */
+.tape {
+  position: absolute; top: -9px; width: 54px; height: 18px;
+  background: rgba(255, 244, 214, .78); border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+}
+.tape.l { left: 18px; transform: rotate(-7deg); }
+.tape.r { right: 18px; transform: rotate(6deg); }
+
+.plan { position: absolute; left: 0; top: 0; overflow: visible; }
+.plan .ink { fill: none; stroke: #EAF3FF; stroke-linecap: round; stroke-linejoin: round; }
+.plan .draw {
+  stroke-dasharray: var(--len); stroke-dashoffset: var(--len);
+  animation: draw .5s ease-out forwards; animation-delay: var(--d);
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.plan text { fill: #EAF3FF; font-family: 'Architects Daughter', system-ui, sans-serif; }
+.fade { opacity: 0; animation: fadein .3s ease-out forwards; animation-delay: var(--d); }
+@keyframes fadein { to { opacity: 1; } }
+
+.mark {
+  position: absolute; pointer-events: none;
+  opacity: 0; animation: markin .5s cubic-bezier(.3, 1.4, .5, 1) forwards; animation-delay: .3s;
+}
+@keyframes markin { 0% { opacity: 0; transform: scale(.6) rotate(-8deg); } 100% { opacity: .95; transform: none; } }
+
+.pin { position: absolute; animation: pop .45s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: var(--d); }
+@keyframes pop { 0% { transform: scale(0); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.icon { filter: drop-shadow(0 2px 2px rgba(5, 20, 50, .35)); }
+
+.titleblock {
+  position: absolute; box-sizing: border-box; height: 50px;
+  border: 1.5px solid #EAF3FF; border-radius: 2px;
+  display: grid; grid-template-columns: 1fr 64px; grid-template-rows: 1fr 1fr;
+  font-size: 12px; line-height: 1; letter-spacing: .04em;
+}
+.titleblock > div { display: flex; align-items: center; padding: 0 9px; white-space: nowrap; overflow: hidden; }
+.titleblock .firm { border-bottom: 1px solid rgba(234, 243, 255, .7); border-right: 1px solid rgba(234, 243, 255, .7); }
+.titleblock .sheet {
+  grid-row: 1 / 3; grid-column: 2; justify-content: center; font-size: 17px;
+  border-left: 0; flex-direction: column; gap: 2px;
+}
+.titleblock .sheet small { font-size: 8px; opacity: .75; letter-spacing: .1em; }
+.titleblock .room { border-right: 1px solid rgba(234, 243, 255, .7); font-size: 13px; color: #FFFFFF; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="buddy.js"></script>
+<script>
+// Floor plans on a grid of cells. Rooms: [name, col, row, width, height] in cells, listed in the
+// order apps fill them. The atrium in the middle holds the Blueprints AI mark.
+const PLANS = [
+  { max: 7, cols: 4, rows: 3, cw: 104, ch: 96, atrium: [1, 1, 2, 1], rooms: [
+    ['Living Room', 0, 2, 2, 1], ['Kitchen', 3, 1, 1, 1], ['Bedroom', 0, 0, 2, 1], ['Dining', 2, 2, 2, 1],
+    ['Office', 3, 0, 1, 1], ['Bath', 2, 0, 1, 1], ['Entry', 0, 1, 1, 1],
+  ] },
+  { max: 14, cols: 5, rows: 4, cw: 100, ch: 92, atrium: [1, 1, 3, 2], rooms: [
+    ['Living Room', 0, 3, 2, 1], ['Kitchen', 2, 3, 1, 1], ['Main Bedroom', 0, 0, 2, 1], ['Office', 3, 0, 2, 1],
+    ['Dining', 3, 3, 2, 1], ['Bath', 2, 0, 1, 1], ['Entry', 0, 2, 1, 1], ['Pantry', 4, 2, 1, 1],
+    ['Laundry', 4, 1, 1, 1], ['Closet', 0, 1, 1, 1],
+  ] },
+  { max: Infinity, cols: 7, rows: 5, cw: 104, ch: 90, atrium: [2, 1, 3, 3], rooms: [
+    ['Living Room', 0, 4, 3, 1], ['Kitchen', 3, 4, 2, 1], ['Main Bedroom', 0, 0, 2, 1], ['Office', 0, 1, 2, 1],
+    ['Dining', 5, 4, 2, 1], ['Studio', 5, 1, 2, 1], ['Media Room', 5, 3, 2, 1], ['Bedroom 2', 3, 0, 2, 1],
+    ['Gym', 0, 3, 2, 1], ['Bath', 2, 0, 1, 1], ['Bedroom 3', 6, 0, 1, 1], ['Laundry', 0, 2, 1, 1],
+    ['Pantry', 1, 2, 1, 1], ['Mudroom', 5, 2, 1, 1], ['Bath 2', 5, 0, 1, 1], ['Powder', 6, 2, 1, 1],
+  ] },
+];
+const PX_PER_FOOT = 8;
+const M = { left: 46, top: 48, right: 30, bottom: 72 };   // paper margins around the plan
+
+let titleRoom;
+const roomOf = {};
+
+function feet(px) {
+  const total = Math.round(px / PX_PER_FOOT * 12);
+  return Math.floor(total / 12) + "'-" + (total % 12) + '"';
+}
+
+/** One app per room in order, then extras: big rooms first, round-robin, up to 2 per cell. */
+function fill(apps, rooms) {
+  const slots = rooms.map(() => []);
+  let i = 0;
+  for (let r = 0; r < rooms.length && i < apps.length; r++) slots[r].push(apps[i++]);
+  const bySize = rooms.map((room, r) => r).sort((a, b) => rooms[b][3] * rooms[b][4] - rooms[a][3] * rooms[a][4]);
+  while (i < apps.length) {
+    let placed = false;
+    for (const r of bySize) {
+      if (i >= apps.length) break;
+      const cap = rooms[r][3] * rooms[r][4] * 2;
+      if (slots[r].length < cap) { slots[r].push(apps[i++]); placed = true; }
+    }
+    if (!placed) break;
+  }
+  return slots;
+}
+
+/** Icon size and grid for k icons in a w × h area. */
+function arrange(k, w, h) {
+  for (let s = 40; s >= 20; s -= 2) {
+    const perRow = Math.max(1, Math.floor((w + 8) / (s + 8)));
+    const rows = Math.ceil(k / perRow);
+    if (rows * (s + 6) - 6 <= h) return { s, perRow: Math.min(perRow, k), rows };
+  }
+  return { s: 20, perRow: Math.max(1, Math.floor((w + 8) / 28)), rows: Math.ceil(k / Math.max(1, Math.floor((w + 8) / 28))) };
+}
+
+Buddy.theme({
+  render(apps, stage, h) {
+    const plan = PLANS.find((p) => apps.length <= p.max);
+    const PW = M.left + plan.cols * plan.cw + M.right;
+    const PH = M.top + plan.rows * plan.ch + M.bottom;
+    const X = (c) => M.left + c * plan.cw;
+    const Y = (r) => M.top + r * plan.ch;
+    const W = plan.cols * plan.cw, H = plan.rows * plan.ch;
+    const [ac, ar, aw, ah] = plan.atrium;
+    const atrium = { x: X(ac), y: Y(ar), w: aw * plan.cw, h: ah * plan.ch };
+    const centre = { x: atrium.x + atrium.w / 2, y: atrium.y + atrium.h / 2 };
+
+    // ---- line work -------------------------------------------------------------------------
+    const lines = [];      // [x1, y1, x2, y2, width, delay, extra class]
+    const arcs = [];       // [path, length, delay]
+    const masks = [];      // rects in paper colour that cut gaps for doors and windows
+    let delay = 0.03;
+    const OVER = 5;        // architects' overshoot past corners
+    const seen = new Set();
+    function wall(x1, y1, x2, y2, w) {
+      const key = [x1, y1, x2, y2].map(Math.round).join(',');
+      if (seen.has(key)) return;
+      seen.add(key);
+      const dx = Math.sign(x2 - x1) * OVER, dy = Math.sign(y2 - y1) * OVER;
+      lines.push([x1 - dx, y1 - dy, x2 + dx, y2 + dy, w, delay]);
+      delay += 0.005;
+    }
+
+    // Outer walls: a double line.
+    const ox = M.left, oy = M.top;
+    for (const inset of [0, 5]) {
+      wall(ox - inset, oy - inset, ox + W + inset, oy - inset, 2.2);
+      wall(ox + W + inset, oy - inset, ox + W + inset, oy + H + inset, 2.2);
+      wall(ox + W + inset, oy + H + inset, ox - inset, oy + H + inset, 2.2);
+      wall(ox - inset, oy + H + inset, ox - inset, oy - inset, 2.2);
+    }
+
+    const rooms = plan.rooms.map(([name, c, r, w, hh]) => ({ name, x: X(c), y: Y(r), w: w * plan.cw, h: hh * plan.ch, c, r, cw: w, ch: hh }));
+    // Interior walls: every room edge that isn't on the outside.
+    for (const rm of rooms) {
+      const edges = [[rm.x, rm.y, rm.x + rm.w, rm.y], [rm.x + rm.w, rm.y, rm.x + rm.w, rm.y + rm.h],
+        [rm.x, rm.y + rm.h, rm.x + rm.w, rm.y + rm.h], [rm.x, rm.y, rm.x, rm.y + rm.h]];
+      for (const [x1, y1, x2, y2] of edges) {
+        const outside = (y1 === y2 && (y1 === oy || y1 === oy + H)) || (x1 === x2 && (x1 === ox || x1 === ox + W));
+        if (!outside) wall(x1, y1, x2, y2, 1.8);
+      }
+    }
+
+    // Doors: on the wall facing the atrium, near a corner; a gap, a leaf and its swing.
+    const D = 22;
+    for (const rm of rooms) {
+      const mx = rm.x + rm.w / 2, my = rm.y + rm.h / 2;
+      let side;
+      if (rm.y + rm.h <= atrium.y) side = 'bottom';
+      else if (rm.y >= atrium.y + atrium.h) side = 'top';
+      else side = rm.x + rm.w <= atrium.x ? 'right' : 'left';
+      let hx, hy, lx, ly, ex, ey, sweep;
+      if (side === 'bottom' || side === 'top') {
+        const wy = side === 'bottom' ? rm.y + rm.h : rm.y;
+        const inward = side === 'bottom' ? -1 : 1;
+        const startX = mx < centre.x ? rm.x + rm.w - 12 - D : rm.x + 12;
+        hx = startX; hy = wy; ex = startX + D; ey = wy;
+        lx = hx; ly = wy + inward * D;
+        masks.push([startX, wy - 3, D, 6]);
+        sweep = side === 'bottom' ? 1 : 0;
+      } else {
+        const wx = side === 'right' ? rm.x + rm.w : rm.x;
+        const inward = side === 'right' ? -1 : 1;
+        const startY = rm.y + rm.h - 12 - D;   // low on the wall, clear of the room name
+        hx = wx; hy = startY; ex = wx; ey = startY + D;
+        lx = wx + inward * D; ly = hy;
+        masks.push([wx - 3, startY, 6, D]);
+        sweep = side === 'right' ? 0 : 1;
+      }
+      lines.push([hx, hy, lx, ly, 1.4, 0.75]);
+      arcs.push([`M${lx} ${ly} A${D} ${D} 0 0 ${sweep} ${ex} ${ey}`, Math.PI * D / 2, 0.42]);
+      rm.door = side;
+    }
+
+    // Windows: centred on each outside edge of a room.
+    const windows = [];
+    for (const rm of rooms) {
+      const len = Math.min(34, rm.w / 3);
+      if (rm.y === oy) windows.push(['h', rm.x + rm.w / 2 - len / 2, oy, len]);
+      if (rm.y + rm.h === oy + H) windows.push(['h', rm.x + rm.w / 2 - len / 2, oy + H, len]);
+      const vl = Math.min(30, rm.h / 3);
+      if (rm.x === ox) windows.push(['v', ox, rm.y + rm.h / 2 - vl / 2, vl]);
+      if (rm.x + rm.w === ox + W) windows.push(['v', ox + W, rm.y + rm.h / 2 - vl / 2, vl]);
+    }
+
+    // Dimension lines along the top row and the left column.
+    const dims = [];
+    for (const rm of rooms.filter((r) => r.r === 0).sort((a, b) => a.x - b.x)) {
+      dims.push(['h', rm.x, oy - 26, rm.w]);
+    }
+    for (const rm of rooms.filter((r) => r.c === 0).sort((a, b) => a.y - b.y)) {
+      dims.push(['v', ox - 28, rm.y, rm.h]);
+    }
+
+    // ---- build the SVG ---------------------------------------------------------------------
+    let svg = `<svg class="plan" width="${PW}" height="${PH}" viewBox="0 0 ${PW} ${PH}" aria-hidden="true">
+      <defs><filter id="sketch" x="-2%" y="-2%" width="104%" height="104%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7"/>
+        <feDisplacementMap in="SourceGraphic" scale="2.6"/></filter></defs><g filter="url(#sketch)">`;
+    const jitter = (i, k) => (Buddy.h.rand(i, k) - 0.5) * 1.6;
+    lines.forEach(([x1, y1, x2, y2, w, d], i) => {
+      const len = Math.hypot(x2 - x1, y2 - y1).toFixed(1);
+      svg += `<line class="ink draw" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-width="${w}" style="--len:${len};--d:${d.toFixed(2)}s"/>`;
+      // a second, lighter pencil pass slightly off the first
+      svg += `<line class="ink draw" x1="${x1 + jitter(i, 1)}" y1="${y1 + jitter(i, 2)}" x2="${x2 + jitter(i, 3)}" y2="${y2 + jitter(i, 4)}" stroke-width="${(w * 0.55).toFixed(2)}" opacity=".45" style="--len:${len};--d:${(d + 0.08).toFixed(2)}s"/>`;
+    });
+    svg += '</g>';
+    for (const [x, y, w, hh] of masks) svg += `<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="#1C4E8F"/>`;
+    svg += '<g filter="url(#sketch)">';
+    for (const [d, len, dl] of arcs) {
+      svg += `<path class="ink draw" d="${d}" stroke-width="1.2" stroke-dasharray="3 3" style="--len:${len.toFixed(1)};--d:${dl}s"/>`;
+    }
+    for (const [dir, x, y, len] of windows) {
+      if (dir === 'h') {
+        svg += `<rect x="${x}" y="${y - 6}" width="${len}" height="12" fill="#1C4E8F"/>`;
+        svg += `<g class="fade" style="--d:.4s"><line class="ink" x1="${x}" y1="${y - 3}" x2="${x + len}" y2="${y - 3}" stroke-width="1.2"/>`
+          + `<line class="ink" x1="${x}" y1="${y + 2}" x2="${x + len}" y2="${y + 2}" stroke-width="1.2"/>`
+          + `<line class="ink" x1="${x}" y1="${y - 6}" x2="${x}" y2="${y + 6}" stroke-width="1.4"/>`
+          + `<line class="ink" x1="${x + len}" y1="${y - 6}" x2="${x + len}" y2="${y + 6}" stroke-width="1.4"/></g>`;
+      } else {
+        svg += `<rect x="${x - 6}" y="${y}" width="12" height="${len}" fill="#1C4E8F"/>`;
+        svg += `<g class="fade" style="--d:.4s"><line class="ink" x1="${x - 3}" y1="${y}" x2="${x - 3}" y2="${y + len}" stroke-width="1.2"/>`
+          + `<line class="ink" x1="${x + 2}" y1="${y}" x2="${x + 2}" y2="${y + len}" stroke-width="1.2"/>`
+          + `<line class="ink" x1="${x - 6}" y1="${y}" x2="${x + 6}" y2="${y}" stroke-width="1.4"/>`
+          + `<line class="ink" x1="${x - 6}" y1="${y + len}" x2="${x + 6}" y2="${y + len}" stroke-width="1.4"/></g>`;
+      }
+    }
+    // dimensions
+    for (const [dir, x, y, len] of dims) {
+      if (dir === 'h') {
+        svg += `<g class="fade" style="--d:.48s"><line class="ink" x1="${x}" y1="${y}" x2="${x + len}" y2="${y}" stroke-width="1"/>`
+          + `<line class="ink" x1="${x - 4}" y1="${y + 4}" x2="${x + 4}" y2="${y - 4}" stroke-width="1.4"/>`
+          + `<line class="ink" x1="${x + len - 4}" y1="${y + 4}" x2="${x + len + 4}" y2="${y - 4}" stroke-width="1.4"/>`
+          + `<line class="ink" x1="${x}" y1="${y - 7}" x2="${x}" y2="${y + 14}" stroke-width=".8" opacity=".6"/>`
+          + `<line class="ink" x1="${x + len}" y1="${y - 7}" x2="${x + len}" y2="${y + 14}" stroke-width=".8" opacity=".6"/>`
+          + `<text x="${x + len / 2}" y="${y - 5}" font-size="11" text-anchor="middle">${feet(len)}</text></g>`;
+      } else {
+        svg += `<g class="fade" style="--d:.48s"><line class="ink" x1="${x}" y1="${y}" x2="${x}" y2="${y + len}" stroke-width="1"/>`
+          + `<line class="ink" x1="${x - 4}" y1="${y + 4}" x2="${x + 4}" y2="${y - 4}" stroke-width="1.4"/>`
+          + `<line class="ink" x1="${x - 4}" y1="${y + len + 4}" x2="${x + 4}" y2="${y + len - 4}" stroke-width="1.4"/>`
+          + `<line class="ink" x1="${x - 7}" y1="${y}" x2="${x + 14}" y2="${y}" stroke-width=".8" opacity=".6"/>`
+          + `<line class="ink" x1="${x - 7}" y1="${y + len}" x2="${x + 14}" y2="${y + len}" stroke-width=".8" opacity=".6"/>`
+          + `<text x="${x - 6}" y="${y + len / 2}" font-size="11" text-anchor="middle" transform="rotate(-90 ${x - 6} ${y + len / 2})">${feet(len)}</text></g>`;
+      }
+    }
+    // atrium: a dashed court
+    svg += `<rect class="ink fade" x="${atrium.x + 12}" y="${atrium.y + 12}" width="${atrium.w - 24}" height="${atrium.h - 24}" rx="4" stroke-width="1" stroke-dasharray="6 5" opacity=".7" style="--d:.35s"/>`;
+    svg += `<text class="fade" x="${centre.x}" y="${atrium.y + atrium.h - 20}" font-size="12" letter-spacing="2" text-anchor="middle" style="--d:.4s">ATRIUM</text>`;
+    // north arrow
+    const nx = ox + W - 8, ny = 22;
+    svg += `<g class="fade" style="--d:.5s"><circle class="ink" cx="${nx}" cy="${ny}" r="11" stroke-width="1.2"/>`
+      + `<path d="M${nx} ${ny - 9} L${nx + 5} ${ny + 6} L${nx} ${ny + 3} L${nx - 5} ${ny + 6} Z" fill="#EAF3FF"/>`
+      + `<text x="${nx - 22}" y="${ny + 5}" font-size="13" text-anchor="middle">N</text></g>`;
+    // room names and sizes
+    const slots = fill(apps, plan.rooms);
+    rooms.forEach((rm, i) => {
+      // A door on the top wall swings into the top of the room, so its name goes at the bottom.
+      rm.labelBottom = rm.door === 'top';
+      const ly = rm.labelBottom ? rm.y + rm.h - 9 : rm.y + 17;
+      svg += `<text class="fade" x="${rm.x + rm.w / 2}" y="${ly}" font-size="12" letter-spacing="1.2" text-anchor="middle" style="--d:${(0.35 + i * 0.015).toFixed(2)}s">${rm.name.toUpperCase()}</text>`;
+      if (!slots[i].length) {
+        svg += `<text class="fade" x="${rm.x + rm.w / 2}" y="${rm.y + rm.h / 2 + 8}" font-size="10" opacity=".7" text-anchor="middle" style="--d:.45s">${feet(rm.w)} × ${feet(rm.h)}</text>`;
+      }
+    });
+    svg += '</svg>';
+
+    const paper = h.el('div', { class: 'paper', style: `width:${PW}px;height:${PH}px` },
+      h.el('div', { class: 'tape l' }), h.el('div', { class: 'tape r' }));
+    paper.append(h.frag(svg));
+
+    // the Blueprints AI mark in the atrium
+    const markH = Math.min(atrium.h - 56, 120), markW = markH * 206 / 181;
+    paper.append(h.el('img', { class: 'mark', src: 'blueprints-mark.svg', alt: '', draggable: 'false',
+      style: `left:${centre.x - markW / 2}px;top:${atrium.y + (atrium.h - 30 - markH) / 2}px;width:${markW}px;height:${markH}px` }));
+
+    // apps in their rooms
+    let k = 0;
+    rooms.forEach((rm, i) => {
+      const list = slots[i];
+      if (!list.length) return;
+      const areaW = rm.w - 14, areaH = rm.h - 30;
+      const g = arrange(list.length, areaW, areaH);
+      const gridW = g.perRow * g.s + (g.perRow - 1) * 8;
+      const gridH = g.rows * g.s + (g.rows - 1) * 6;
+      const x0 = rm.x + (rm.w - gridW) / 2;
+      const y0 = rm.y + (rm.labelBottom ? 6 : 24) + (areaH - gridH) / 2 + 2;
+      list.forEach((app, j) => {
+        roomOf[app.id] = rm.name;
+        const col = j % g.perRow, row = Math.floor(j / g.perRow);
+        // centre a short last row
+        const inRow = Math.min(g.perRow, list.length - row * g.perRow);
+        const rowX = x0 + (g.perRow - inRow) * (g.s + 8) / 2;
+        const pin = h.el('div', { class: 'pin', 'data-scope': '',
+          style: `left:${rowX + col * (g.s + 8)}px;top:${y0 + row * (g.s + 6)}px;width:${g.s}px;height:${g.s}px`,
+          vars: { d: (0.45 + Math.min(k * 0.025, 0.5)).toFixed(2) + 's' } },
+          h.app(app, { class: 'icon', style: `width:${g.s}px;height:${g.s}px` }));
+        paper.append(pin);
+        k++;
+      });
+    });
+
+    // title block, bottom right
+    const tbW = Math.min(330, W);
+    const tb = h.el('div', { class: 'titleblock fade', style: `left:${ox + W - tbW}px;top:${oy + H + 18}px;width:${tbW}px;--d:.55s` },
+      h.el('div', { class: 'firm', text: 'BLUEPRINTS AI · MENU BAR PLAN' }),
+      h.el('div', { class: 'sheet', html: '<small>SHEET</small>A-101' }));
+    titleRoom = h.el('div', { class: 'room' });
+    tb.append(titleRoom);
+    paper.append(tb);
+    // a scale note, bottom left (when there's room beside the title block)
+    if (W - tbW >= 190) paper.append(h.el('div', { class: 'fade', style: `position:absolute;left:${ox}px;top:${oy + H + 26}px;font-size:12px;opacity:.85;--d:.55s`,
+      text: `${apps.length} app${apps.length === 1 ? '' : 's'} · scale 1/8" = 1'-0"` }));
+
+    stage.append(paper);
+  },
+  hot(app) {
+    if (!titleRoom) return;
+    titleRoom.textContent = app ? `${(roomOf[app.id] || 'Room').toUpperCase()} · ${app.name}` : 'Pick a room';
+  },
+  empty(stage, msg, h) {
+    titleRoom = null;
+    const paper = h.el('div', { class: 'paper', style: 'width:360px;height:220px' },
+      h.el('div', { class: 'tape l' }), h.el('div', { class: 'tape r' }));
+    paper.append(h.el('img', { class: 'mark', src: 'blueprints-mark.svg', alt: '', draggable: 'false',
+      style: 'left:146px;top:28px;width:68px;height:60px' }));
+    paper.append(h.el('div', { class: 'fade', style: 'position:absolute;left:28px;right:28px;top:104px;text-align:center;font-size:15px;line-height:1.35;--d:.3s', text: msg }));
+    paper.append(h.el('div', { class: 'fade', style: 'position:absolute;right:16px;bottom:12px;font-size:11px;opacity:.75;--d:.4s', text: 'SHEET A-000' }));
+    stage.append(paper);
+  },
+});
+</script>
+</body>
+</html>

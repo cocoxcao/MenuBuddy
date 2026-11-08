@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Watch Box</title>
+<link rel="stylesheet" href="base.css">
+<style>
+#stage { padding-top: 4px; font-family: 'DM Sans', system-ui, sans-serif; color: #1A1A1A; }
+.box { position: relative; animation: box .5s ease-out both; }
+@keyframes box { 0% { transform: translateY(-20px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.lid {
+  position: absolute; top: 0; left: 24px; right: 24px; box-sizing: border-box;
+  border: 16px solid #1B1B1B; border-radius: 14px; background: rgba(190, 210, 220, .28); overflow: hidden;
+  transform-origin: 50% 100%; transform: perspective(700px) rotateX(22deg);
+  animation: lid .9s .1s cubic-bezier(.3, 1.3, .5, 1) both;
+}
+@keyframes lid { 0% { transform: perspective(700px) rotateX(88deg); } 100% { transform: perspective(700px) rotateX(22deg); } }
+.lid::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 0 30%, rgba(255, 255, 255, .35) 30% 38%, transparent 38% 100%); }
+.hinge { position: absolute; width: 28px; height: 9px; border-radius: 2px; background: #7A7A7A; }
+.body {
+  position: absolute; left: 10px; right: 10px; box-sizing: border-box; padding: 14px 18px 36px;
+  background: #161616; border-radius: 18px; box-shadow: 0 14px 24px rgba(0, 0, 0, .35);
+}
+.grid { background: #0D0D0D; border-radius: 8px; padding: 10px; display: grid; gap: 8px; }
+.slot { position: relative; background: #1C1C1C; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.strap { position: absolute; left: 50%; top: 6px; bottom: 6px; width: 24px; transform: translateX(-50%); background: #2B2B2B; border-radius: 4px; }
+.cushion { position: absolute; left: 8px; right: 8px; height: 40px; background: #2E2E2E; border-radius: 14px; box-shadow: inset 0 3px 0 #3A3A3A; }
+.face {
+  box-sizing: border-box; padding: 6px; border: 3px solid #A7ADB4; border-radius: 50%; background: #F4F4F2;
+}
+.face.hot { box-shadow: 0 6px 16px rgba(0, 0, 0, .55); }
+.plate {
+  position: absolute; left: 50%; bottom: 9px; transform: translateX(-50%); background: #B89B5E; color: #1A1408;
+  padding: 2px 14px; border-radius: 2px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap;
+}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="buddy.js"></script>
+<script>
+let plate;
+
+Buddy.theme({
+  render(apps, stage, h) {
+    const n = apps.length;
+    const cols = n <= 5 ? Math.max(3, n) : n <= 10 ? 5 : n <= 18 ? 6 : 8;
+    const rows = Math.ceil(n / cols);
+    const compact = rows > 3;
+    const slotW = 73, slotH = compact ? 72 : 92, face = compact ? 40 : 44;
+    const gridW = cols * slotW + (cols - 1) * 8 + 20;
+    const gridH = rows * slotH + (rows - 1) * 8 + 20;
+    const bodyW = gridW + 36, bodyH = gridH + 14 + 36;
+    const lidH = compact ? 110 : 140;
+    const W = bodyW + 20, H = lidH + 2 + bodyH;
+
+    const box = h.el('div', { class: 'box', style: `width:${W}px;height:${H}px` });
+    box.append(
+      h.el('div', { class: 'lid', 'aria-hidden': 'true', style: `height:${lidH}px` }),
+      h.el('div', { class: 'hinge', 'aria-hidden': 'true', style: `top:${lidH - 6}px;left:${Math.round(W * 0.22)}px` }),
+      h.el('div', { class: 'hinge', 'aria-hidden': 'true', style: `top:${lidH - 6}px;right:${Math.round(W * 0.22)}px` })
+    );
+
+    const grid = h.el('div', { class: 'grid', style: `grid-template-columns:repeat(${cols}, ${slotW}px)` });
+    for (let i = 0; i < rows * cols; i++) {
+      const slot = h.el('div', { class: 'slot', style: `height:${slotH}px` },
+        h.el('div', { class: 'strap', 'aria-hidden': 'true' }),
+        h.el('div', { class: 'cushion', 'aria-hidden': 'true', style: `top:${slotH / 2 - 20}px` }));
+      if (apps[i]) slot.append(h.app(apps[i], { class: 'face', style: `width:${face}px;height:${face}px` }));
+      grid.append(slot);
+    }
+    plate = h.el('div', { class: 'plate' });
+    box.append(h.el('div', { class: 'body', style: `top:${lidH + 2}px;height:${bodyH}px` }, grid, plate));
+    stage.append(box);
+  },
+  hot(app) {
+    if (plate) plate.textContent = app ? app.name : 'Watch your apps';
+  },
+});
+</script>
+</body>
+</html>

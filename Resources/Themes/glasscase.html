@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glass Case</title>
+<link rel="stylesheet" href="base.css">
+<style>
+#stage { padding-top: 6px; font-family: 'DM Sans', system-ui, sans-serif; color: #1A1A1A; }
+.wrap { position: relative; display: flex; flex-direction: column; align-items: center; animation: descend .8s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes descend { 0% { transform: translateY(-30px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.case { position: relative; background: #E4E9E6; }
+.case > .deco { position: absolute; pointer-events: none; }
+.backframe { border: 2.5px solid #B8A57A; }
+.quilt {
+  box-sizing: border-box; border: 5px solid #1A1A1A; background-color: #245F4E;
+  background-image: repeating-linear-gradient(45deg, transparent 0 18px, #2F7462 18px 20px), repeating-linear-gradient(-45deg, transparent 0 18px, #2F7462 18px 20px);
+}
+.floor { left: 0; right: 0; bottom: 0; background: #1F5B4A; border-top: 3px solid #2A7360; }
+.stack { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; flex-direction: column; align-items: center; }
+.tier { display: flex; flex-direction: column; align-items: center; }
+.tier + .tier { margin-top: -30px; }
+.row { display: flex; justify-content: space-around; align-items: flex-end; }
+.stand { display: flex; flex-direction: column; align-items: center; }
+.pole { width: 3px; background: #C9A45C; }
+.stand-foot { width: 22px; height: 4px; border-radius: 2px; background: #C9A45C; }
+.riser { height: 26px; background: #2A6B57; border-top: 2px solid #C9A45C; border-radius: 8px 8px 0 0; }
+.tile {
+  width: 40px; height: 40px; box-sizing: border-box; padding: 4px;
+  border: 1.5px solid #B8A57A; border-radius: 12px; background: #F6F1E4;
+}
+.tile.hot { box-shadow: 0 6px 16px rgba(10, 40, 30, .35); }
+.overlay { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+.glint {
+  background: linear-gradient(120deg, transparent 0 20%, rgba(255, 255, 255, .28) 20% 27%, transparent 27% 62%, rgba(255, 255, 255, .16) 62% 65%, transparent 65% 100%);
+  animation: glint 3.5s 1s ease-in-out infinite;
+}
+@keyframes glint { 0%, 70%, 100% { opacity: .9; } 80% { opacity: .4; } }
+.frontframe { border: 5px solid #C2AF84; }
+.plinth { position: relative; height: 60px; box-sizing: border-box; background: #BCA97E; border-top: 4px solid #D8C79E; }
+.plinth::before { content: ''; position: absolute; left: 16px; right: 16px; top: 8px; bottom: 8px; border: 1.5px solid #A8956A; }
+.placard {
+  position: absolute; left: 50%; bottom: 17px; transform: translateX(-50%); z-index: 1;
+  background: #5E4D2B; color: #F6EFD9; padding: 2px 14px; border-radius: 2px;
+  font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-size: 15px; white-space: nowrap;
+}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="buddy.js"></script>
+<script>
+let placard;
+
+Buddy.theme({
+  render(apps, stage, h) {
+    const rows = h.rows(apps, apps.length <= 10 ? 5 : 8); // back tier first, front tier last
+    const T = rows.length;
+    const front = T - 1;
+    const maxN = Math.max(...rows.map((r) => r.length));
+    const W = Math.max(apps.length <= 5 ? 340 : 450, maxN * 64 + 130);
+    const poleMax = T > 3 ? 28 : 52;
+    const stands = (k) => T === 1 || k < front;
+    let stackH = 0;
+    rows.forEach((r, k) => { stackH += (stands(k) ? 70 + poleMax : 66) - (k ? 30 : 0); });
+    const H = Math.max(270, 62 + stackH + 8);
+
+    const wrap = h.el('div', { class: 'wrap', style: `width:${W}px` });
+    const box = h.el('div', { class: 'case', style: `width:${W}px;height:${H}px` });
+    const bfB = Math.round(H * 0.2);
+    box.append(
+      h.el('div', { class: 'deco backframe', 'aria-hidden': 'true', style: `left:46px;right:46px;top:22px;bottom:${bfB}px` }),
+      h.el('div', { class: 'deco quilt', 'aria-hidden': 'true', style: `left:70px;top:46px;width:150px;height:${Math.min(210, H - 120)}px` }),
+      h.el('div', { class: 'deco floor', 'aria-hidden': 'true', style: `height:${Math.round(stackH * 0.55) + 20}px` })
+    );
+
+    const stack = h.el('div', { class: 'stack' });
+    rows.forEach((row, k) => {
+      const riserW = Math.max(160, W - 40 - (front - k) * 30);
+      const c = row.length;
+      const mid = (c - 1) / 2;
+      const items = row.map((app, j) => {
+        const tile = h.app(app, { class: 'tile' });
+        if (!stands(k)) return tile;
+        const t = c === 1 ? 0 : Math.abs(j - mid) / mid;
+        const pole = Math.round(16 + (poleMax - 16) * (1 - t));
+        return h.el('div', { class: 'stand' }, tile,
+          h.el('div', { class: 'pole', 'aria-hidden': 'true', style: `height:${pole}px` }),
+          h.el('div', { class: 'stand-foot', 'aria-hidden': 'true' }));
+      });
+      stack.append(h.el('div', { class: 'tier' },
+        h.el('div', { class: 'row', style: `width:${riserW - 20}px` }, items),
+        h.el('div', { class: 'riser', 'aria-hidden': 'true', style: `width:${riserW}px` })));
+    });
+    box.append(stack);
+
+    const bx = 46, by = 22, bb = H - bfB;
+    box.append(
+      h.frag(`<svg class="overlay" aria-hidden="true" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><path d="M0 0L${bx} ${by}M${W} 0L${W - bx} ${by}M0 ${H}L${bx} ${bb}M${W} ${H}L${W - bx} ${bb}" stroke="#B8A57A" stroke-width="2.5"/></svg>`),
+      h.el('div', { class: 'overlay glint', 'aria-hidden': 'true' }),
+      h.el('div', { class: 'overlay frontframe', 'aria-hidden': 'true' })
+    );
+
+    placard = h.el('div', { class: 'placard' });
+    wrap.append(box, h.el('div', { class: 'plinth', style: `width:${W - 40}px` }, placard));
+    stage.append(wrap);
+  },
+  hot(app) {
+    if (placard) placard.textContent = app ? app.name : 'The Menu Collection';
+  },
+});
+</script>
+</body>
+</html>

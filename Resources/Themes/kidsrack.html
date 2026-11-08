@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Picture-Book Rack</title>
+<link rel="stylesheet" href="base.css">
+<style>
+#stage { padding-top: 8px; font-family: 'Fredoka', system-ui, sans-serif; color: #1F1B2E; }
+.rack {
+  position: relative; transform-origin: 70% 0;
+  animation: plop .6s cubic-bezier(.3, 1.5, .5, 1) both;
+}
+@keyframes plop { 0% { transform: scale(.6) translateY(-40px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.back {
+  position: absolute; left: 18px; right: 18px; top: 26px; bottom: 0;
+  background: #F3D9AE; border: 2.5px solid #8A5A2B; border-radius: 6px;
+}
+.board {
+  position: absolute; top: 0; bottom: 0; width: 24px; box-sizing: border-box; z-index: 6;
+  background: #E2B97F; border: 2.5px solid #8A5A2B;
+}
+.board.left { left: 0; border-radius: 16px 4px 4px 4px; }
+.board.right { right: 0; border-radius: 4px 16px 4px 4px; }
+.tiers { position: absolute; left: 24px; right: 24px; top: 10px; display: flex; flex-direction: column; }
+.tier {
+  position: relative; height: 96px; box-sizing: border-box; padding-bottom: 6px;
+  display: flex; align-items: flex-end; justify-content: center; gap: 4px;
+}
+.lip {
+  position: absolute; left: -6px; right: -6px; bottom: 0; height: 30px; box-sizing: border-box; z-index: 5;
+  background: #E9C48F; border: 2.5px solid #8A5A2B; border-radius: 4px; box-shadow: inset 0 4px 0 #F3D7A8;
+}
+.book {
+  width: 58px; height: 74px; flex: none; margin-left: var(--ml); padding: 6px 4px 0; box-sizing: border-box;
+  border: 2px solid #3B2A1A; border-radius: 3px 7px 7px 3px; background: var(--cover);
+  box-shadow: inset 6px 0 0 rgba(59, 42, 26, .18);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transform: rotate(var(--rot));
+  animation: peek .5s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: var(--delay);
+}
+@keyframes peek { 0% { translate: 0 30px; } 100% { translate: 0 0; } }
+/* Top-tier books grow downward, so a 2x book doesn't poke up into the menu bar. */
+.tier:first-child .book { transform-origin: 50% 8%; }
+.book .title {
+  width: 100%; font-size: 9px; font-weight: 700; line-height: 1; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.book > img { width: 30px; height: 30px; }
+.slate {
+  position: absolute; right: 34px; bottom: -6px; z-index: 7; transform: rotate(-3deg);
+  background: #2F4A3A; border: 3px solid #8A5A2B; border-radius: 6px; padding: 5px 12px;
+  color: #F4F1E8; font-size: 14px; font-weight: 600; white-space: nowrap;
+}
+/* Books are big already: grow 1.5x, not 2x. */
+#stage .app.hot { scale: 1.5; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="buddy.js"></script>
+<script>
+const COVERS = ['#7FD6FF', '#FFE45C', '#FFB27A', '#B8F2C9', '#FF8FB1', '#A9C6FF', '#E2C7FF', '#9BE15D', '#FFD3A8', '#C9F0FF'];
+let slate;
+
+function perTier(n) {
+  if (n <= 12) return 3;
+  if (n <= 20) return 5;
+  if (n <= 32) return 6;
+  return 8;
+}
+
+// Even split: 10 books on 4 tiers → 3, 3, 2, 2 (no lonely book on the bottom tier).
+function evenRows(list, max) {
+  const count = Math.max(1, Math.ceil(list.length / max));
+  const base = Math.floor(list.length / count);
+  const extra = list.length % count;
+  const out = [];
+  let i = 0;
+  for (let r = 0; r < count; r++) {
+    const size = base + (r < extra ? 1 : 0);
+    out.push(list.slice(i, i + size));
+    i += size;
+  }
+  return out;
+}
+
+Buddy.theme({
+  render(apps, stage, h) {
+    const tiers = evenRows(apps, perTier(apps.length));
+    const per = tiers[0].length;
+    const width = Math.max(300, per * 62 + 96);
+    const height = 10 + tiers.length * 96 + 12;
+    const rows = h.el('div', { class: 'tiers' });
+    let i = 0;
+    tiers.forEach((tier, t) => {
+      const row = h.el('div', { class: 'tier' });
+      tier.forEach((app, j) => {
+        const book = h.app(app, {
+          class: 'book', img: false,
+          vars: {
+            cover: h.pick(COVERS, i),
+            rot: Math.round((h.rand(i, 2) - 0.5) * 8) + 'deg',
+            ml: (j === 0 ? 0 : Math.round((h.rand(i, 4) - 0.5) * 20)) + 'px',
+            delay: (0.15 + t * 0.08 + j * 0.03).toFixed(2) + 's',
+          },
+        });
+        book.append(h.el('span', { class: 'title', text: app.name }), h.el('img', { src: app.icon, alt: '', draggable: 'false' }));
+        row.append(book);
+        i++;
+      });
+      row.append(h.el('div', { class: 'lip', 'aria-hidden': 'true' }));
+      rows.append(row);
+    });
+    slate = h.el('div', { class: 'slate' });
+    stage.append(
+      h.el('div', { class: 'rack', style: 'width:' + width + 'px;height:' + height + 'px' },
+        h.el('div', { class: 'back', 'aria-hidden': 'true' }),
+        h.el('div', { class: 'board left', 'aria-hidden': 'true' }),
+        h.el('div', { class: 'board right', 'aria-hidden': 'true' }),
+        rows,
+        slate
+      )
+    );
+  },
+  hot(app) {
+    if (slate) slate.textContent = app ? 'Story time: ' + app.name : 'Pick a story!';
+  },
+});
+</script>
+</body>
+</html>
