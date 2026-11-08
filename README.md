@@ -33,8 +33,9 @@ To build it from the code on your Mac instead (needs Apple's Command Line Tools)
 
 ## Update
 
-The install line updates too: run it again whenever there's a new version. It replaces the app and
-keeps your settings.
+Right-click MenuBuddy's icon → **Check for Updates…**: if there's a newer version, click Update and
+MenuBuddy installs it and opens again. Or run the install line again; it replaces the app wherever
+it is installed and keeps your settings.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/cocoxcao/MenuBuddy/main/install.sh | bash
@@ -130,8 +131,8 @@ choose to show only the icons the notch hides.
 MenuBuddy adds eight themes for the drop-down, drag-to-reorder, and hiding apps you don't need from
 its list, without touching their real icons.
 
-**Is MenuBuddy safe? Does it collect data?** It sends nothing anywhere: no analytics, no update
-checks, no accounts. The code is open, the installer checks the download's checksum, and it uses
+**Is MenuBuddy safe? Does it collect data?** It sends nothing anywhere: no analytics, no accounts,
+and it only asks GitHub for a newer version when you click Check for Updates…. The code is open, the installer checks the download's checksum, and it uses
 Accessibility only to list your menu bar apps and click the one you pick.
 
 **Which Macs does MenuBuddy run on?** macOS 13 Ventura or later, on Apple silicon and Intel Macs.
@@ -140,7 +141,9 @@ Accessibility only to list your menu bar apps and click the one you pick.
 ## Privacy
 
 <!-- site:privacy -->
-- **No network:** no analytics, no update checks, nothing sent anywhere. The theme pages are files
+- **No network:** no analytics, no automatic update checks, nothing sent anywhere. The one exception
+  is **Check for Updates…** in the menu: only when you click it, MenuBuddy asks GitHub for the latest
+  version number, and downloads it only if you choose Update. The theme pages are files
   inside the app, and a WebKit content rule list<!-- site:omit --> (`WebGuard.swift`)<!-- /site:omit --> blocks every load that isn't
   a local file or data URL (images, scripts, fonts, fetch, beacons, frames, navigation), so a page
   couldn't reach the internet even if it tried.

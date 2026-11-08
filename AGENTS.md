@@ -44,4 +44,5 @@ Quits MenuBuddy, deletes the app from `/Applications` and `~/Applications`, dele
 
 - Don't use `sudo`; nothing here needs it.
 - Don't turn off Gatekeeper or change system security settings.
-- MenuBuddy makes no network requests and needs no accounts or keys.
+- MenuBuddy makes no network requests (except Check for Updates…, only when the user clicks it) and
+  needs no accounts or keys.

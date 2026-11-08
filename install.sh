@@ -76,7 +76,13 @@ main() {   # everything runs from here, so a half-downloaded script does nothing
     [[ -d $app ]] || fail "the download has no MenuBuddy.app."
     codesign --verify --deep --strict "$app" 2>/dev/null || fail "the app's code signature doesn't check out; nothing was installed."
 
-    local dest=${MENUBUDDY_DEST:-/Applications}
+    # Update the copy that's already there (Applications or ~/Applications), else /Applications.
+    local dest=${MENUBUDDY_DEST:-}
+    if [[ -z $dest ]]; then
+        if [[ -d /Applications/MenuBuddy.app ]]; then dest=/Applications
+        elif [[ -d $HOME/Applications/MenuBuddy.app ]]; then dest=$HOME/Applications
+        else dest=/Applications; fi
+    fi
     if [[ ! -w $dest ]]; then dest=$HOME/Applications; mkdir -p "$dest"; fi
 
     quit_running
