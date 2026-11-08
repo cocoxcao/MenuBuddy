@@ -18,7 +18,7 @@ build=$(( $(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' $plist) + 1 ))
 scripts/build.sh --release
 git commit -qam "MenuBuddy $version"
 git tag "v$version"
-git push -q origin HEAD "v$version"
+git push -q origin HEAD:main "v$version"   # always to main, whatever the local branch is called
 
 # The owner's gh account (this Mac may have another one active).
 export GH_TOKEN=${GH_TOKEN:-$(gh auth token --user cocoxcao 2>/dev/null || gh auth token)}

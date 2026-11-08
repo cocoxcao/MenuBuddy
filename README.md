@@ -192,17 +192,6 @@ MENUBUDDY_THEMES=$PWD/Resources/Themes build/MenuBuddy.app/Contents/MacOS/MenuBu
 
 Designs: the canvas "Menu Bar Buddy looks" on claude.ai.
 
-## Demo video
-
-```sh
-demo/render.sh            # → ../menubuddy-media/MenuBuddy-demo.mp4 (+ poster PNG)
-```
-
-Records the real theme pages frame by frame through WebKit (their CSS animations run on a virtual
-clock, stepped 1/30 s per frame), draws the real Settings view, and stages them on a desktop with a
-notch. Needs `../menubuddy-media/wallpaper.png` and FileWheel in `~/Applications` (it's the app
-MenuBuddy rescues from behind the notch). Sample apps are Apple's own, standing in for menu bar apps.
-
 ## License
 
 MenuBuddy is free software, released under the GNU General Public License v3.0: see

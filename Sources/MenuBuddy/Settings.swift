@@ -139,7 +139,8 @@ struct SettingsView: View {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { confirmReset = false }
                     }
                 }
-                .foregroundStyle(confirmReset ? Color.red : Color.primary)
+                .buttonStyle(.borderedProminent)        // filled, so the red shows: red "Reset?", grey "Reset"
+                .tint(confirmReset ? .red : Color(nsColor: .systemGray))
                 .help(confirmReset ? "Click again to clear all Insights counts" : "Clear all Insights counts")
                 .disabled(insights.data.opens == 0 && insights.data.clicks == 0)
             }
