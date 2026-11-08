@@ -6,10 +6,14 @@ import Charts
 /// Settings on frosted glass: the desktop shows through, blurred, like a half-transparent pane.
 final class SettingsWindowController: NSWindowController {
     convenience init(model: AppModel) {
-        // Extra top padding: the content runs under the transparent title bar.
-        let host = NSHostingView(rootView: SettingsView(model: model).padding(.top, 18))
+        // Extra top padding: the content runs under the transparent title bar. The content scrolls,
+        // so the window can be shorter than it (small screens); it opens no taller than the screen.
+        let natural = NSHostingView(rootView: SettingsView(model: model).padding(.top, 18)).fittingSize
+        let host = NSHostingView(rootView: ScrollView(.vertical) { SettingsView(model: model).padding(.top, 18) }
+            .scrollIndicators(.automatic))
         host.translatesAutoresizingMaskIntoConstraints = false
-        let size = host.fittingSize
+        let screen = (NSScreen.main ?? NSScreen.screens[0]).visibleFrame
+        let size = NSSize(width: natural.width, height: min(natural.height, screen.height - 60))
 
         let glass = NSVisualEffectView()
         glass.material = .underWindowBackground
@@ -24,13 +28,16 @@ final class SettingsWindowController: NSWindowController {
         ])
 
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
-                              styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
         window.title = "MenuBuddy"
         window.titlebarAppearsTransparent = true
         window.isOpaque = false
         window.backgroundColor = .clear
         window.contentView = glass
+        // Drag the top or bottom edge to resize; the width stays the content's width.
+        window.contentMinSize = NSSize(width: natural.width, height: 360)
+        window.contentMaxSize = NSSize(width: natural.width, height: natural.height)
         window.isReleasedWhenClosed = false
         self.init(window: window)
         window.center()
@@ -49,6 +56,7 @@ struct SettingsView: View {
     @Environment(\.colorScheme) private var scheme
     @State private var openAtLogin = SMAppService.mainApp.status == .enabled
     @State private var lower = Lower.options
+    @State private var confirmReset = false   // Reset asks once: first click shows a red "Reset?"
     var showInsights = false   // the Insights tab first (for --settings-snapshot … --insights)
     enum Lower: String, CaseIterable { case options = "Options", insights = "Insights" }
 
@@ -122,7 +130,18 @@ struct SettingsView: View {
                 Text("since \(insights.data.since.formatted(date: .abbreviated, time: .omitted)) · kept on this Mac only")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button("Reset") { insights.reset() }.disabled(insights.data.opens == 0 && insights.data.clicks == 0)
+                Button(confirmReset ? "Reset?" : "Reset") {
+                    if confirmReset {
+                        insights.reset()
+                        confirmReset = false
+                    } else {
+                        confirmReset = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { confirmReset = false }
+                    }
+                }
+                .foregroundStyle(confirmReset ? Color.red : Color.primary)
+                .help(confirmReset ? "Click again to clear all Insights counts" : "Clear all Insights counts")
+                .disabled(insights.data.opens == 0 && insights.data.clicks == 0)
             }
             HStack(alignment: .top, spacing: 24) {
                 VStack(alignment: .leading, spacing: 14) {
