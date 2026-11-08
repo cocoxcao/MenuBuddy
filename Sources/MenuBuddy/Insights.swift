@@ -14,6 +14,18 @@ final class Insights: ObservableObject {
         var clicks = 0
         var apps: [String: AppCount] = [:]   // menu bar entry key → its name and clicks
         var days: [String: Day] = [:]        // "yyyy-MM-dd" (local) → that day's counts
+
+        init() {}
+        /// Reads what's there and defaults the rest, so a later version that adds a field still
+        /// keeps the counts saved by an earlier one (updates never reset Insights).
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            since = (try? c.decodeIfPresent(Date.self, forKey: .since)) ?? Date()
+            opens = (try? c.decodeIfPresent(Int.self, forKey: .opens)) ?? 0
+            clicks = (try? c.decodeIfPresent(Int.self, forKey: .clicks)) ?? 0
+            apps = (try? c.decodeIfPresent([String: AppCount].self, forKey: .apps)) ?? [:]
+            days = (try? c.decodeIfPresent([String: Day].self, forKey: .days)) ?? [:]
+        }
     }
 
     private static let key = "insights"

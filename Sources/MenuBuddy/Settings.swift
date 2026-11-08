@@ -6,38 +6,44 @@ import Charts
 /// Settings on frosted glass: the desktop shows through, blurred, like a half-transparent pane.
 final class SettingsWindowController: NSWindowController {
     convenience init(model: AppModel) {
-        // Extra top padding: the content runs under the transparent title bar. The content scrolls,
-        // so the window can be shorter than it (small screens); it opens no taller than the screen.
-        let natural = NSHostingView(rootView: SettingsView(model: model).padding(.top, 18)).fittingSize
-        let host = NSHostingView(rootView: ScrollView(.vertical) { SettingsView(model: model).padding(.top, 18) }
+        // The title bar stays put (frosted, with the window buttons and "MenuBuddy"); only the
+        // content under it scrolls, so the window can be shorter than the content on small screens.
+        // It opens no taller than the screen.
+        let natural = NSHostingView(rootView: SettingsView(model: model).padding(.top, 6)).fittingSize
+        let host = NSHostingView(rootView: ScrollView(.vertical) { SettingsView(model: model).padding(.top, 6) }
             .scrollIndicators(.automatic))
         host.translatesAutoresizingMaskIntoConstraints = false
-        let screen = (NSScreen.main ?? NSScreen.screens[0]).visibleFrame
-        let size = NSSize(width: natural.width, height: min(natural.height, screen.height - 60))
 
         let glass = NSVisualEffectView()
         glass.material = .underWindowBackground
         glass.blendingMode = .behindWindow
         glass.state = .active
         glass.addSubview(host)
-        NSLayoutConstraint.activate([
-            host.leadingAnchor.constraint(equalTo: glass.leadingAnchor),
-            host.trailingAnchor.constraint(equalTo: glass.trailingAnchor),
-            host.topAnchor.constraint(equalTo: glass.topAnchor),
-            host.bottomAnchor.constraint(equalTo: glass.bottomAnchor),
-        ])
 
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: natural),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
         window.title = "MenuBuddy"
         window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .line
         window.isOpaque = false
         window.backgroundColor = .clear
         window.contentView = glass
+        // The content starts below the title bar (the window's content layout guide), never under it.
+        let below = (window.contentLayoutGuide as? NSLayoutGuide)?.topAnchor ?? glass.topAnchor
+        NSLayoutConstraint.activate([
+            host.leadingAnchor.constraint(equalTo: glass.leadingAnchor),
+            host.trailingAnchor.constraint(equalTo: glass.trailingAnchor),
+            host.topAnchor.constraint(equalTo: below),
+            host.bottomAnchor.constraint(equalTo: glass.bottomAnchor),
+        ])
+        let titleBar = window.frame.height - window.contentLayoutRect.height
+        let screen = (NSScreen.main ?? NSScreen.screens[0]).visibleFrame
+        let full = natural.height + titleBar
+        window.setContentSize(NSSize(width: natural.width, height: min(full, screen.height - 40)))
         // Drag the top or bottom edge to resize; the width stays the content's width.
         window.contentMinSize = NSSize(width: natural.width, height: 360)
-        window.contentMaxSize = NSSize(width: natural.width, height: natural.height)
+        window.contentMaxSize = NSSize(width: natural.width, height: full)
         window.isReleasedWhenClosed = false
         self.init(window: window)
         window.center()
