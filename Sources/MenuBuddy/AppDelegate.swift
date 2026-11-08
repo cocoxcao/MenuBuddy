@@ -153,12 +153,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         model.refresh()
         pushApps()
         panel.show()
+        Insights.shared.recordOpen()
         if model.themeID == "christmas" { SeasonalOverlay.shared.count() }
     }
 
     private func open(_ id: String) {
         panel.hide()
         guard let entry = model.entry(id: id) else { return }
+        Insights.shared.recordClick(key: entry.key, name: entry.name)
         if model.themeID == "christmas" { SeasonalOverlay.shared.count() }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
             MenuBarScanner.press(entry) {

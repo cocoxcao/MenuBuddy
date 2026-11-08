@@ -1,6 +1,7 @@
 import AppKit
 import ServiceManagement
 import SwiftUI
+import Charts
 
 /// Settings on frosted glass: the desktop shows through, blurred, like a half-transparent pane.
 final class SettingsWindowController: NSWindowController {
@@ -44,8 +45,12 @@ final class SettingsWindowController: NSWindowController {
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var insights = Insights.shared
     @Environment(\.colorScheme) private var scheme
     @State private var openAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var lower = Lower.options
+    var showInsights = false   // the Insights tab first (for --settings-snapshot … --insights)
+    enum Lower: String, CaseIterable { case options = "Options", insights = "Insights" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -81,13 +86,107 @@ struct SettingsView: View {
 
             Divider()
 
-            HStack(alignment: .top, spacing: 24) {
-                options.frame(width: 390, alignment: .leading)
-                appsList
+            Picker("", selection: $lower) {
+                ForEach(Lower.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 240)
+
+            // Options and Insights take turns in the lower half, so the window keeps one size.
+            ZStack(alignment: .topLeading) {
+                HStack(alignment: .top, spacing: 24) {
+                    options.frame(width: 390, alignment: .leading)
+                    appsList
+                }
+                .opacity(lower == .options ? 1 : 0)
+                .allowsHitTesting(lower == .options)
+                insightsView
+                    .opacity(lower == .insights ? 1 : 0)
+                    .allowsHitTesting(lower == .insights)
             }
         }
         .padding(22)
         .frame(width: 852)
+        .onAppear { if showInsights { lower = .insights } }
+    }
+
+    // MARK: - Insights
+
+    private var insightsView: some View {
+        let one = { (x: Double) in x < 10 ? String(format: "%.1f", x) : String(Int(x.rounded())) }
+        let top = insights.topApps(5)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Insights").font(.headline)
+                Text("since \(insights.data.since.formatted(date: .abbreviated, time: .omitted)) · kept on this Mac only")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("Reset") { insights.reset() }.disabled(insights.data.opens == 0 && insights.data.clicks == 0)
+            }
+            HStack(alignment: .top, spacing: 24) {
+                VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 10) {
+                    stat("\(insights.data.opens)", "times opened", "\(one(insights.opensPerDay)) a day · \(insights.todayCounts.opens) today")
+                    stat("\(insights.data.clicks)", "apps clicked", "\(one(insights.clicksPerDay)) a day · \(insights.todayCounts.clicks) today")
+                }
+                lastTwoWeeks
+                }
+                .frame(width: 390, alignment: .leading)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Clicked most").font(.subheadline.weight(.semibold))
+                    if top.isEmpty {
+                        Text("Click an app in the drop-down and it shows up here.").font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        let most = max(1, top[0].clicks)
+                        ForEach(Array(top.enumerated()), id: \.offset) { _, app in
+                            HStack(spacing: 8) {
+                                Text(app.name).lineLimit(1).frame(width: 130, alignment: .leading)
+                                GeometryReader { g in
+                                    RoundedRectangle(cornerRadius: 3).fill(Color.accentColor.opacity(0.75))
+                                        .frame(width: max(3, g.size.width * CGFloat(app.clicks) / CGFloat(most)), height: 8)
+                                        .frame(maxHeight: .infinity, alignment: .center)
+                                }
+                                Text("\(app.clicks)").monospacedDigit().frame(width: 40, alignment: .trailing)
+                            }
+                            .frame(height: 16)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Opens and clicks for each of the last 14 days.
+    private var lastTwoWeeks: some View {
+        let rows = insights.lastDays(14)
+        return VStack(alignment: .leading, spacing: 4) {
+            Text("Last 14 days").font(.subheadline.weight(.semibold))
+            Chart {
+                ForEach(rows, id: \.day) { row in
+                    BarMark(x: .value("Day", row.day, unit: .day), y: .value("Count", row.opens))
+                        .foregroundStyle(by: .value("What", "Opened"))
+                        .position(by: .value("What", "Opened"))
+                    BarMark(x: .value("Day", row.day, unit: .day), y: .value("Count", row.clicks))
+                        .foregroundStyle(by: .value("What", "Clicked"))
+                        .position(by: .value("What", "Clicked"))
+                }
+            }
+            .chartLegend(position: .top, alignment: .trailing)
+            .chartXAxis { AxisMarks(values: .stride(by: .day, count: 3)) { _ in AxisValueLabel(format: .dateTime.month(.abbreviated).day()) } }
+            .frame(width: 380, height: 110)
+        }
+    }
+
+    private func stat(_ value: String, _ label: String, _ detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value).font(.system(size: 26, weight: .semibold)).monospacedDigit()
+            Text(label).font(.subheadline)
+            Text(detail).font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(12)
+        .frame(width: 185, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.05)))
     }
 
     private var appsList: some View {

@@ -103,13 +103,19 @@
 <div id="stage"></div>
 <script src="buddy.js"></script>
 <script>
-// Keypad, coins and the tray. Typing a code (letter, then number) picks a slot; each click on the
+// Keypad, coins and the tray (the screen hints at them while idle). Typing a code (letter, then number) picks a slot; each click on the
 // coin slot pays $1 (up to $15); OK vends the app into the tray, where a click opens it. Clicking an
 // app in the window still opens it straight away.
 const MAX_CREDIT = 15;
 let H, apps = [], codes = {}, byCode = {};
 let lcd, lcdCode, lcdName, lcdMoney, coinBox, tray, machine;
 let entry = '', picked = null, credit = 0, vended = null, message = null, messageTimer = 0;
+// While nothing's going on, the screen takes turns inviting you to play.
+const IDLE = ['Pick a snack!', 'Type a code', 'Tap the coin!'];
+let idle = 0;
+const idleHint = () => (credit ? 'Type a code' : IDLE[idle % IDLE.length]);
+setInterval(() => { idle++; if (lcd && !entry && !picked && !message && !hovering) showLCD(); }, 2200);
+let hovering = false;
 
 function columnsFor(n) {
   if (n <= 3) return 3;
@@ -138,7 +144,7 @@ function showLCD() {
     lcdMoney.textContent = credit ? 'Paid $' + credit : '';
   } else {
     lcdCode.textContent = '--';
-    lcdName.textContent = message || 'Pick a snack!';
+    lcdName.textContent = message || idleHint();
     lcdMoney.textContent = credit ? 'Paid $' + credit : '';
   }
   coinBox.classList.toggle('empty', credit === 0);
@@ -269,9 +275,10 @@ Buddy.theme({
   },
   hot(app) {
     // While you're typing a code or paying, the screen belongs to that.
+    hovering = !!app;
     if (!lcd || entry || picked || message) return;
     lcdCode.textContent = app ? codes[app.id] || '--' : '--';
-    lcdName.textContent = app ? app.name : 'Pick a snack!';
+    lcdName.textContent = app ? app.name : idleHint();
     lcdMoney.textContent = app ? '$' + price(app) : (credit ? 'Paid $' + credit : '');
   },
   action(name, el) {

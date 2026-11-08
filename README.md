@@ -31,6 +31,15 @@ To build it from the code on your Mac instead (needs Apple's Command Line Tools)
 *Install MenuBuddy from https://github.com/cocoxcao/MenuBuddy*. The steps it follows are in
 [AGENTS.md](https://github.com/cocoxcao/MenuBuddy/blob/main/AGENTS.md).
 
+## Update
+
+The install line updates too: run it again whenever there's a new version. It replaces the app and
+keeps your settings.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/cocoxcao/MenuBuddy/main/install.sh | bash
+```
+
 ## Delete
 
 ```sh
@@ -57,6 +66,18 @@ room and the app, like a real drawing sheet. With many apps, the big rooms take 
 
 *[Blueprints AI](https://www.blueprints-ai.com/) is AI that generates construction blueprints. Cofounded by Coco.*
 
+### Play the vending machine
+
+<img src="docs/images/theme-vending.png" width="420" alt="The Vending Machine theme: apps on coils with codes and prices, a keypad, a coin slot and the PUSH tray">
+
+Click any app on the shelves to open it, or play the right side like a real machine:
+
+1. **Type a code** on the keypad: the letter, then the number under the app (like A1).
+2. **Click the coin** to drop in $1 at a time, until you've paid the price on the screen.
+3. **Press OK.** The coil turns, the app falls into the PUSH tray, and you click it there to open it.
+
+Pay too much and the screen gives you change.
+
 ### All themes
 
 | Theme | Picture | What it is |
@@ -81,8 +102,9 @@ room and the app, like a real drawing sheet. With many apps, the big rooms take 
   or right-click it → Hide. Its real menu bar icon is untouched. Unhide in Settings → Your apps
   (the eye button, or Show All), where you can also drag rows to reorder and reset the order.
 - **Settings / Quit:** right-click the icon. Settings has the theme switcher with a live preview,
-  and options for the hover, the corner, showing only icons hidden behind the notch, including
-  Apple's own icons, and open at login.
+  options for the hover, the corner, showing only icons hidden behind the notch, including
+  Apple's own icons, and open at login, and an Insights tab: how often you open MenuBuddy, which
+  apps you click most, and your daily average.
 - **Move the icon:** ⌘-drag it in the menu bar. Keep it near the clock so the notch can't hide it.
 
 MenuBuddy needs **Accessibility** access (System Settings → Privacy & Security → Accessibility,
@@ -123,6 +145,8 @@ Accessibility only to list your menu bar apps and click the one you pick.
   a local file or data URL (images, scripts, fonts, fetch, beacons, frames, navigation), so a page
   couldn't reach the internet even if it tried.
 - **Accessibility** is used only to list the apps in your menu bar and click the one you pick.
+- **Insights** (Settings → Insights) counts how often you open MenuBuddy and click each app. The
+  counts stay in MenuBuddy's settings on your Mac; Reset clears them.
 <!-- /site:privacy -->
 
 ## Build
@@ -142,8 +166,9 @@ The Christmas Tree theme's seasonal extra is kept encoded in `Resources/Themes/s
 `scripts/seasonal.sh decode` writes it out as `build/seasonal.html` to edit, and
 `scripts/seasonal.sh encode` stores it again.
 
-Releases: `scripts/build.sh --release` makes `build/MenuBuddy.zip` and its checksum file
-`build/MenuBuddy.zip.sha256`; attach both to a GitHub release. `install.sh` takes the latest one.
+Releases: commit, then `scripts/release.sh 0.2.0 "What changed"`. It sets the version, builds the
+universal zip and its checksum (`scripts/build.sh --release`), tags, pushes and creates the GitHub
+release; `install.sh` always takes the latest one, so users update with the install line.
 
 ## Making themes
 
