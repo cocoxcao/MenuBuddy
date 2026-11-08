@@ -3,9 +3,10 @@
 **A goofy menu bar helper for when the menu bar is too full, or the notch eats your icons.**
 
 <!-- site:intro (cocooncao.com/menubuddy copies the marked parts of this README) -->
-Rest the pointer on MenuBuddy's icon and a little scene drops down with every app that has an
-icon up there: a vending machine, a velvet jewelry stand, a glass case, a floor plan… Point at an
-app and it grows; click it and its own menu opens, even if its icon is hidden behind the notch.
+MenuBuddy is a free, open-source menu bar organizer for Mac, and a playful alternative to Bartender
+or Ice. Rest the pointer on its icon and a little scene drops down with every app that has an icon
+up there: a vending machine, a velvet jewelry stand, a glass case, a floor plan… Point at an app and
+it grows; click it and its own menu opens, even if its icon is hidden behind the MacBook notch.
 <!-- /site:intro -->
 
 <!-- site:install -->
@@ -89,6 +90,30 @@ not Screen Recording) to read and click other apps' menu bar icons. Right-click 
 Accessibility Access… opens the list with a small floating window you can drag MenuBuddy from.<!-- site:omit -->
 The permission survives rebuilds: the app is signed against its bundle id, not one build.<!-- /site:omit -->
 <!-- /site:body -->
+
+## FAQ
+
+<!-- site:faq -->
+**Is MenuBuddy a free alternative to Bartender?** Yes. Like Bartender, Ice or Hidden Bar, it gets
+you to every app in your menu bar, and it's free and open source (GPL-3.0). It works differently:
+your menu bar stays as it is, and MenuBuddy shows every icon in a drop-down scene that opens when
+you rest the pointer on it.
+
+**How do I see menu bar icons hidden behind the MacBook notch?** Install MenuBuddy and rest the
+pointer on its icon, or on the top-right corner of the screen. Every app with a menu bar icon shows
+up, including the ones the notch covers, and clicking one opens its own menu. In Settings you can
+choose to show only the icons the notch hides.
+
+**How do I customize the menu bar on a Mac?** macOS lets you ⌘-drag menu bar icons to move them.
+MenuBuddy adds eight themes for the drop-down, drag-to-reorder, and hiding apps you don't need from
+its list, without touching their real icons.
+
+**Is MenuBuddy safe? Does it collect data?** It sends nothing anywhere: no analytics, no update
+checks, no accounts. The code is open, the installer checks the download's checksum, and it uses
+Accessibility only to list your menu bar apps and click the one you pick.
+
+**Which Macs does MenuBuddy run on?** macOS 13 Ventura or later, on Apple silicon and Intel Macs.
+<!-- /site:faq -->
 
 ## Privacy
 
