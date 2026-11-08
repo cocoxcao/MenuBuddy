@@ -249,14 +249,14 @@ Buddy.theme({
       const cuts = [0];
       for (let k = 1; k < n; k++) cuts.push(len * (k / n + R(i, 10 + k) * 0.18));
       cuts.push(len);
-      const ext = 1.5 + Math.abs(R(i, 5)) * 5;                  // a little extra overshoot
+      const ext = 4 + Math.abs(R(i, 5)) * 14;                   // ends run past the corners, like a pencil
       for (let k = 0; k < n; k++) {
-        const gap = R(i, 20 + k) * 9;                            // > 0 a gap, < 0 an overlap
+        const gap = R(i, 20 + k) * 14 + 2;                       // mostly a small gap, sometimes an overlap
         const a = cuts[k] + (k ? gap / 2 : -ext), b = cuts[k + 1] - (k < n - 1 ? gap / 2 : -ext);
-        const off = (t) => R(i, 30 + k * 3 + t) * 1.6;            // ends wander off the line a bit
+        const off = (t) => R(i, 30 + k * 3 + t) * 2.4;            // ends wander off the line a bit
         const ax = x1 + ux * a + nx * off(0), ay = y1 + uy * a + ny * off(0);
         const bx = x1 + ux * b + nx * off(1), by = y1 + uy * b + ny * off(1);
-        const bow = R(i, 40 + k) * Math.min(5, (b - a) / 28);    // the hand's curve, up to ~5px
+        const bow = (R(i, 40 + k) < 0 ? -1 : 1) * (1.5 + Math.abs(R(i, 40 + k)) * 5) * Math.min(1, (b - a) / 90);   // the hand's curve, 1.5–4 px
         const cx = (ax + bx) / 2 + nx * bow, cy = (ay + by) / 2 + ny * bow;
         const sl = (b - a).toFixed(1);
         svg += `<path class="ink draw" d="M${ax.toFixed(1)} ${ay.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}" stroke-width="${(w * (0.85 + Math.abs(R(i, 50 + k)) * 0.4)).toFixed(2)}" style="--len:${sl};--d:${(d + k * 0.04).toFixed(2)}s"/>`;

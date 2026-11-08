@@ -12,6 +12,6 @@ mkdir -p build/shots
 out="build/shots/$theme${query:+-$query}.png"
 # perl's alarm: headless Chrome occasionally hangs instead of exiting.
 perl -e 'alarm 45; exec @ARGV' "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars \
-    --allow-file-access-from-files --window-size="$size" --virtual-time-budget=4000 \
+    --allow-file-access-from-files --force-device-scale-factor="${SCALE:-1}" --window-size="$size" --virtual-time-budget=4000 \
     --screenshot="$PWD/$out" "file://$PWD/Resources/Themes/$theme.html${query:+?$query}" >/dev/null 2>&1
 echo "$out"

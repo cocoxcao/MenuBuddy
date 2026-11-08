@@ -4,7 +4,7 @@
   { "id": "christmas", "name": "Christmas Tree", "limited": true },
   { "id": "jewelry", "name": "Velvet Stand" },
   { "id": "glasscase", "name": "Glass Case" },
-  { "id": "kidsrack", "name": "Picture-Book Rack" },
+  { "id": "kidsrack", "name": "Book Rack" },
   { "id": "watchbox", "name": "Watch Box" },
-  { "id": "cloth", "name": "Hanging Apps" }
+  { "id": "cloth", "name": "Clothes Rail" }
 ]

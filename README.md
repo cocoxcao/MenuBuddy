@@ -87,9 +87,9 @@ Pay too much and the screen gives you change.
 | **Christmas Tree** · *[Limited](docs/images/theme-christmas.png "A seasonal theme, select it in Settings. It's a tree to hang your apps on, and it's also hiding a little **surprise**...")* | <img src="docs/images/theme-christmas.png" width="240" alt="Christmas Tree theme"> | Your apps as ornaments on a tree, with lights, a star and presents. |
 | **Velvet Stand** | <img src="docs/images/theme-jewelry.png" width="240" alt="Velvet Stand theme"> | Black velvet and gold pedestals, with one app hanging as a pendant. |
 | **Glass Case** | <img src="docs/images/theme-glasscase.png" width="240" alt="Glass Case theme"> | An emerald museum case with apps on gold stands. |
-| **Picture-Book Rack** | <img src="docs/images/theme-kidsrack.png" width="240" alt="Picture-Book Rack theme"> | Apps as picture books on a wooden rack. |
+| **Book Rack** | <img src="docs/images/theme-kidsrack.png" width="240" alt="Book Rack theme"> | Apps as picture books on a wooden rack. |
 | **Watch Box** | <img src="docs/images/theme-watchbox.png" width="240" alt="Watch Box theme"> | Apps as watch faces on cushions under a glass lid. |
-| **Hanging Apps** | <img src="docs/images/theme-cloth.png" width="240" alt="Hanging Apps theme"> | Apps hanging from hangers on a rail, swaying gently. |
+| **Clothes Rail** | <img src="docs/images/theme-cloth.png" width="240" alt="Clothes Rail theme"> | Apps hanging from hangers on a rail, swaying gently. |
 
 ## Use
 
