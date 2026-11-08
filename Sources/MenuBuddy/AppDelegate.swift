@@ -10,7 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var openTimer: Timer?
     private var closeTimer: Timer?
     private var idleRefresh: Timer?
-    private var appearanceWatch: NSKeyValueObservation?
+    private var iconTheme: String?
     private var bag = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -27,9 +27,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             button.action = #selector(statusClicked)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             button.toolTip = "MenuBuddy"
-            appearanceWatch = button.observe(\.effectiveAppearance) { [weak self] _, _ in
-                DispatchQueue.main.async { self?.updateStatusIcon() }
-            }
         }
         updateStatusIcon()
 
@@ -72,10 +69,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: - Status item
 
+    /// Sets the icon once per theme. The image picks its light or dark ink itself each time AppKit
+    /// draws it (see StatusIcon.menuBar), so nothing here watches the menu bar's appearance.
     private func updateStatusIcon() {
-        guard let button = statusItem?.button else { return }
-        let dark = button.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        button.image = StatusIcon.image(theme: model.themeID, dark: dark)
+        guard let button = statusItem?.button, iconTheme != model.themeID else { return }
+        iconTheme = model.themeID
+        button.image = StatusIcon.menuBar(theme: model.themeID)
     }
 
     @objc private func statusClicked() {
@@ -249,7 +248,36 @@ final class ClosureMenuItem: NSMenuItem {
 
 /// The theme's little glyph for the menu bar; dark outlines turn light on a dark menu bar.
 enum StatusIcon {
+    private static var cache: [String: NSImage] = [:]
+
+    /// The status item's image. It chooses the light or dark glyph at draw time from the appearance
+    /// AppKit draws it with, so the menu bar copy on every display gets the right ink.
+    ///
+    /// Don't go back to watching the button's effectiveAppearance and setting a new image: each new
+    /// image makes AppKit redraw the status item's copies on the other displays, which sets the
+    /// button's appearance and fires the watch again. With two displays that loop never stopped
+    /// (70–90% CPU around the clock, seen 2026-11-07).
+    static func menuBar(theme: String) -> NSImage {
+        let light = image(theme: theme, dark: false)
+        if light.isTemplate { return light }   // the fallback symbol adapts by itself
+        let dark = image(theme: theme, dark: true)
+        return NSImage(size: light.size, flipped: false) { rect in
+            let isDark = NSAppearance.currentDrawing().bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            (isDark ? dark : light).draw(in: rect)
+            return true
+        }
+    }
+
+    /// One variant, read and parsed once per theme and appearance.
     static func image(theme: String, dark: Bool) -> NSImage {
+        let key = "\(theme)|\(dark)"
+        if let hit = cache[key] { return hit }
+        let made = load(theme: theme, dark: dark)
+        cache[key] = made
+        return made
+    }
+
+    private static func load(theme: String, dark: Bool) -> NSImage {
         let url = Paths.themes.appendingPathComponent("icons/\(theme).svg")
         if var svg = try? String(contentsOf: url, encoding: .utf8) {
             if dark {
