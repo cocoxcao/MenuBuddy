@@ -20,10 +20,13 @@ say() { printf '\033[1m%s\033[0m\n' "$*"; }
 fail() { printf 'MenuBuddy install: %s\n' "$*" >&2; exit 1; }
 
 quit_running() {
-    if [[ ${MENUBUDDY_TEST:-} != 1 ]] && pgrep -x MenuBuddy >/dev/null; then
+    # -a: include this script's ancestors. Check for Updates… runs this script from MenuBuddy itself,
+    # and pgrep/pkill skip their ancestors by default, so the old copy would keep running.
+    if [[ ${MENUBUDDY_TEST:-} != 1 ]] && pgrep -ax MenuBuddy >/dev/null; then
         say "Quitting the running MenuBuddy…"
-        osascript -e 'quit app "MenuBuddy"' >/dev/null 2>&1 || pkill -x MenuBuddy || true
-        sleep 1
+        pkill -ax MenuBuddy || true
+        for _ in $(seq 50); do pgrep -ax MenuBuddy >/dev/null || break; sleep 0.2; done
+        pkill -9 -ax MenuBuddy || true
     fi
 }
 
