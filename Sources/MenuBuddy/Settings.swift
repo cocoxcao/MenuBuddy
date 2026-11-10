@@ -100,12 +100,17 @@ struct SettingsView: View {
 
             Divider()
 
-            Picker("", selection: $lower) {
-                ForEach(Lower.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            HStack {
+                Picker("", selection: $lower) {
+                    ForEach(Lower.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 240)
+                Spacer()
+                Text("Version \(Updater.current)").foregroundStyle(.secondary)
+                Button("Check for Updates…") { Updater.check() }
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .frame(width: 240)
 
             // Options and Insights take turns in the lower half, so the window keeps one size.
             ZStack(alignment: .topLeading) {

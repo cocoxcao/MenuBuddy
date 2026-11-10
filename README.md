@@ -33,7 +33,7 @@ To build it from the code on your Mac instead (needs Apple's Command Line Tools)
 
 ## Update
 
-Right-click MenuBuddy's icon → **Check for Updates…**: if there's a newer version, click Update and
+Right-click MenuBuddy's icon → **Check for Updates…** (also in Settings, next to the version number): if there's a newer version, click Update and
 MenuBuddy installs it and opens again. Or run the install line again; it replaces the app wherever
 it is installed and keeps your settings.
 
@@ -142,7 +142,7 @@ Accessibility only to list your menu bar apps and click the one you pick.
 
 <!-- site:privacy -->
 - **No network:** no analytics, no automatic update checks, nothing sent anywhere. The one exception
-  is **Check for Updates…** in the menu: only when you click it, MenuBuddy asks GitHub for the latest
+  is **Check for Updates…** in the menu or Settings: only when you click it, MenuBuddy asks GitHub for the latest
   version number, and downloads it only if you choose Update. The theme pages are files
   inside the app, and a WebKit content rule list<!-- site:omit --> (`WebGuard.swift`)<!-- /site:omit --> blocks every load that isn't
   a local file or data URL (images, scripts, fonts, fetch, beacons, frames, navigation), so a page
