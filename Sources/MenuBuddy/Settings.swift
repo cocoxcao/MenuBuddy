@@ -108,7 +108,7 @@ struct SettingsView: View {
                 .labelsHidden()
                 .frame(width: 240)
                 Spacer()
-                Text("Version \(Updater.current)").foregroundStyle(.secondary)
+                Text(Updater.label).foregroundStyle(.secondary)
                 Button("Check for Updates…") { Updater.check() }
             }
 

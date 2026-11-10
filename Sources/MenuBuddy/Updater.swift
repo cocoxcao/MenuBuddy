@@ -10,6 +10,11 @@ enum Updater {
     private static let installer = "https://raw.githubusercontent.com/cocoxcao/MenuBuddy/main/install.sh"
 
     static var current: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0" }
+    /// "Version 0.4.6 (build 12)" for Settings.
+    static var label: String {
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "Version \(current) (build \(build))"
+    }
 
     static func check() {
         var request = URLRequest(url: latest, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
