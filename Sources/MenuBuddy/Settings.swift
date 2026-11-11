@@ -109,6 +109,7 @@ struct SettingsView: View {
                 .frame(width: 240)
                 Spacer()
                 Text(Updater.label).foregroundStyle(.secondary)
+                AutoUpdateToggle()
                 Button("Check for Updates…") { Updater.check() }
             }
 

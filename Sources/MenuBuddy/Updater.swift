@@ -1,6 +1,6 @@
 import AppKit
 
-/// Menu → Check for Updates…: the only time MenuBuddy goes online, and only when you click it.
+/// Menu → Check for Updates…: when you click it, and once every 2 weeks by itself (Settings can turn that off).
 /// It asks GitHub for the latest release's version number; if that's newer, it offers to install it
 /// with the same install.sh as the README's install line (checksum and signature checked), into the
 /// folder this copy runs from. The script quits MenuBuddy, replaces it and opens the new one.
@@ -16,14 +16,38 @@ enum Updater {
         return "Version \(current) (build \(build))"
     }
 
-    static func check() {
+    static func check(quiet: Bool = false) {
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastUpdateCheck")
         var request = URLRequest(url: latest, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         URLSession.shared.dataTask(with: request) { data, _, _ in
             let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
             let tag = (json?["tag_name"] as? String).map { $0.hasPrefix("v") ? String($0.dropFirst()) : $0 }
-            DispatchQueue.main.async { show(latest: tag) }
+            DispatchQueue.main.async {
+                // The automatic check stays silent unless there is something new.
+                if quiet && (tag.map { !isNewer($0, than: current) } ?? true) { return }
+                show(latest: tag)
+            }
         }.resume()
+    }
+
+    /// Every 2 weeks the app also checks by itself (Settings can turn this off). It reads only the
+    /// version number, and it says something only when a newer version is out.
+    static var autoCheck: Bool {
+        get { UserDefaults.standard.object(forKey: "autoUpdateCheck") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "autoUpdateCheck") }
+    }
+    private static var timer: Timer?
+    static func startAutoCheck() {
+        checkIfDue()
+        timer = Timer.scheduledTimer(withTimeInterval: 6 * 3600, repeats: true) { _ in checkIfDue() }
+        timer?.tolerance = 3600
+    }
+    static func checkIfDue() {
+        guard autoCheck else { return }
+        let last = UserDefaults.standard.double(forKey: "lastUpdateCheck")
+        guard Date().timeIntervalSince1970 - last >= 14 * 86400 else { return }
+        check(quiet: true)
     }
 
     /// "0.10.0" is newer than "0.9.2": compares the numbers part by part.
@@ -79,4 +103,12 @@ enum Updater {
             alert.runModal()
         }
     }
+}
+
+import SwiftUI
+
+/// Settings: the switch for the automatic check every 2 weeks.
+struct AutoUpdateToggle: View {
+    @AppStorage("autoUpdateCheck") private var on = true
+    var body: some View { Toggle("Check every 2 weeks", isOn: $on) }
 }
