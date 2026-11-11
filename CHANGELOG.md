@@ -2,6 +2,9 @@
 
 Older versions: see the GitHub releases.
 
+## 0.3.2 — 2026-11-11
+- New icon: a pill with rings spreading from its top-right corner. It is the menu bar icon (dark pill, white rings, the same on every menu bar) and, on the black tile, the app icon. Themes still change the panel's look.
+
 ## 0.3.1 — 2026-11-11
 - Signed with Coco's own certificate, so macOS keeps MenuBuddy's permissions (Accessibility) after updates. Allow them once more after this update; after that, never again.
 
