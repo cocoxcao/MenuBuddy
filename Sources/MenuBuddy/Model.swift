@@ -217,6 +217,15 @@ final class AppModel: ObservableObject {
         AccessHelper.shared.show(model: self)
     }
 
+    /// Opens the Accessibility page. Off: also asks macOS and shows the drag helper. On: only opens
+    /// the page, so it can be turned off there.
+    func openAccessibilitySettings() {
+        guard trusted else { requestAccess(); return }
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     private func checkTrust() {
         let now = AXIsProcessTrusted()
         if now != trusted {

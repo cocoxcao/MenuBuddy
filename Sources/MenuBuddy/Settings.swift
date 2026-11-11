@@ -290,10 +290,30 @@ struct SettingsView: View {
                     }
                     openAtLogin = SMAppService.mainApp.status == .enabled
                 }
+            permissions.padding(.top, 6)
             Text("Right-click the MenuBuddy icon for Settings and Quit. ⌘-drag it in the menu bar to move it.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 4)
+        }
+    }
+
+    /// Settings → Permissions: always here, so Accessibility can be turned on or off in one click.
+    private var permissions: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Permissions").font(.headline)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: model.trusted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(model.trusted ? .green : .orange)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Accessibility: \(model.trusted ? "On" : "Off")")
+                    Text("To see your menu bar icons and click them for you.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Open Accessibility…") { model.openAccessibilitySettings() }
+                    .help(model.trusted ? "Opens System Settings, where you can turn it off" : "Opens System Settings, with MenuBuddy's icon beside it to drag into the list")
+            }
         }
     }
 
