@@ -75,7 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func updateStatusIcon() {
         guard let button = statusItem?.button, iconTheme != model.themeID else { return }
         iconTheme = model.themeID
-        button.image = StatusIcon.menuBar(theme: model.themeID)
+        button.image = StatusIcon.pill          // the app icon as a pill; themes keep their own look in the panel
     }
 
     @objc private func statusClicked() {
@@ -252,6 +252,37 @@ final class ClosureMenuItem: NSMenuItem {
 /// The theme's little glyph for the menu bar; dark outlines turn light on a dark menu bar.
 enum StatusIcon {
     private static var cache: [String: NSImage] = [:]
+
+    /// The menu bar icon: the app icon's look on a menu-bar pill (28 x 18 pt). A dark gradient pill,
+    /// white rings from the top-right corner that stack and fade, one solid white corner, and a faint
+    /// rim so it still shows on a dark menu bar. Drawn in code, the same in light and dark mode.
+    /// (Picked from app-standards/brand/menubar-glyphs.swift, idea G.)
+    static let pill: NSImage = {
+        let img = NSImage(size: NSSize(width: 28, height: 18), flipped: false) { _ in
+            guard let c = NSGraphicsContext.current?.cgContext else { return false }
+            let r = CGRect(x: 1, y: 3, width: 26, height: 12)
+            let path = CGPath(roundedRect: r, cornerWidth: 6, cornerHeight: 6, transform: nil)
+            c.saveGState(); c.addPath(path); c.clip()
+            let srgb = CGColorSpace(name: CGColorSpace.sRGB)!
+            let g = CGGradient(colorsSpace: srgb, colors: [CGColor(srgbRed: 0x3A/255, green: 0x3B/255, blue: 0x40/255, alpha: 1),
+                                                           CGColor(srgbRed: 0x0D/255, green: 0x0E/255, blue: 0x10/255, alpha: 1)] as CFArray,
+                               locations: [0, 1])!
+            c.drawLinearGradient(g, start: CGPoint(x: r.minX, y: r.maxY), end: CGPoint(x: r.maxX, y: r.minY), options: [])
+            let o = CGPoint(x: r.maxX - 1.5, y: r.maxY)
+            func ring(_ f: CGFloat, _ a: CGFloat) {
+                let rad = r.width * f
+                c.setFillColor(gray: 1, alpha: a)
+                c.fillEllipse(in: CGRect(x: o.x - rad, y: o.y - rad, width: rad * 2, height: rad * 2))
+            }
+            ring(0.80, 0.14); ring(0.60, 0.20); ring(0.42, 0.32); ring(0.25, 1)
+            c.restoreGState()
+            c.addPath(CGPath(roundedRect: r.insetBy(dx: 0.25, dy: 0.25), cornerWidth: 5.75, cornerHeight: 5.75, transform: nil))
+            c.setStrokeColor(gray: 1, alpha: 0.28); c.setLineWidth(0.5); c.strokePath()
+            return true
+        }
+        img.accessibilityDescription = "MenuBuddy"
+        return img
+    }()
 
     /// The status item's image. It chooses the light or dark glyph at draw time from the appearance
     /// AppKit draws it with, so the menu bar copy on every display gets the right ink.
