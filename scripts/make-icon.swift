@@ -1,5 +1,5 @@
 // Draws the MenuBuddy app icon ("Hot Corner": rings spreading from the top-right corner, where
-// MenuBuddy opens, on a blue tile) into an .icns file.
+// MenuBuddy opens, on a black tile, "Quiet Mark") into an .icns file.
 //   swiftc scripts/make-icon.swift -o build/make-icon && build/make-icon Resources/AppIcon.icns
 // build.sh runs this only when Resources/AppIcon.icns is missing; delete it to redraw.
 import AppKit
@@ -24,12 +24,12 @@ func draw(size: CGFloat) -> NSBitmapImageRep {
     // Shadows ignore the scale above, so they're sized in pixels.
     let k = size / 1024
     ctx.setShadow(offset: CGSize(width: 0, height: -12 * k), blur: 28 * k, color: srgb(0x000000, 0.28))
-    ctx.addPath(tile); ctx.setFillColor(srgb(0x2F5BF0)); ctx.fillPath()
+    ctx.addPath(tile); ctx.setFillColor(srgb(0x1A1B1E)); ctx.fillPath()
     ctx.restoreGState()
 
     ctx.saveGState()
     ctx.addPath(tile); ctx.clip()
-    let gradient = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: [srgb(0x5AABFF), srgb(0x2149E6)] as CFArray,
+    let gradient = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: [srgb(0x3A3B40), srgb(0x0D0E10)] as CFArray,
                               locations: [0, 1])!
     ctx.drawLinearGradient(gradient, start: CGPoint(x: 100, y: 924), end: CGPoint(x: 924, y: 100), options: [])
 

@@ -1,4 +1,4 @@
-# MenuBuddy
+# <img src="docs/images/icon.png" width="44" align="center" alt="MenuBuddy app icon: white rings spreading from the top-right corner of a black tile"> MenuBuddy
 
 **A goofy menu bar helper for when the menu bar is too full, or the notch eats your icons.**
 
