@@ -1,4 +1,4 @@
-# <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/icon-blue.png"><img src="docs/images/icon.png" width="44" align="absmiddle" alt="MenuBuddy app icon: white rings spreading from the top-right corner of a black tile"></picture> MenuBuddy
+# <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/icon-blue.png"><img src="docs/images/icon.png" width="44" align="absmiddle" alt="MenuBuddy app icon: a pill with white rings spreading from its top-right corner, on a black tile"></picture> MenuBuddy
 
 **A goofy menu bar helper for when the menu bar is too full, or the notch eats your icons.**
 
