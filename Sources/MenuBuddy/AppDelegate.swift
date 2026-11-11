@@ -92,12 +92,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func showMenu() {
         panel.hide()
         let menu = NSMenu()
-        if !model.trusted {
-            menu.addItem(ClosureMenuItem(title: "Allow Accessibility Access…") { [weak self] in self?.model.requestAccess() })
-            menu.addItem(.separator())
-        }
+        // Settings comes first in every app's menu (app-standards).
         menu.addItem(withTitle: "Settings…", action: #selector(showSettingsAction), keyEquivalent: ",").target = self
         menu.addItem(ClosureMenuItem(title: "Check for Updates…") { Updater.check() })
+        if !model.trusted {
+            menu.addItem(.separator())
+            menu.addItem(ClosureMenuItem(title: "Allow Accessibility Access…") { [weak self] in self?.model.requestAccess() })
+        }
         menu.addItem(withTitle: "Refresh", action: #selector(refreshAction), keyEquivalent: "r").target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit MenuBuddy", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
