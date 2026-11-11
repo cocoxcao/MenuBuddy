@@ -46,22 +46,23 @@ cp build/MenuBuddy "$APP/Contents/MacOS/MenuBuddy"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp -R Resources/Themes "$APP/Contents/Resources/Themes"
-# Ad-hoc signing normally pins the designated requirement to this build's hash, so macOS forgets
-# the Accessibility permission after every rebuild (the switch still shows on, but it no longer
-# applies). Pinning the requirement to the bundle id keeps the permission across rebuilds.
-#
-# A build you hand to other people keeps the default requirement (this build's hash) and the
-# hardened runtime instead: with the bundle-id requirement, any ad-hoc app that claims the same
-# bundle id would inherit their Accessibility grant. They re-allow Accessibility after an update.
+# Signed with "Call Notes Local Signing" (Coco's private certificate, made by call-notes/build.sh
+# --make-signing) when this Mac has it. Then the requirement is the bundle id AND that certificate:
+# macOS keeps Accessibility / Automation across updates, and only builds signed with her private
+# key match. Without it the build is signed ad hoc (tied to this exact build; a new build asks
+# again). Never pin the bundle id alone: any program could claim it and borrow the permissions.
+SIGNING="Call Notes Local Signing"
+IDENTITY="$(security find-certificate -c "$SIGNING" -Z ~/Library/Keychains/login.keychain-db 2>/dev/null | awk '/SHA-1/ {print $3; exit}')"
+if [[ "${1:-}" == "--release" && -z $IDENTITY ]]; then echo "No \"$SIGNING\" on this Mac: releases must be signed with it." >&2; exit 1; fi
+codesign --force --sign "${IDENTITY:--}" --timestamp=none --options runtime "$APP"
+[[ -n $IDENTITY ]] && echo "Signed with \"$SIGNING\"" || echo "Signed ad hoc"
 if [[ "${1:-}" == "--release" ]]; then
-    codesign --force --sign - --options runtime "$APP"
     rm -f build/MenuBuddy.zip
     ditto -c -k --sequesterRsrc --keepParent "$APP" build/MenuBuddy.zip
     (cd build && shasum -a 256 MenuBuddy.zip > MenuBuddy.zip.sha256)   # install.sh checks the download against it
     echo "Zipped build/MenuBuddy.zip ($(lipo -archs "$APP/Contents/MacOS/MenuBuddy"))"
     exit 0
 fi
-codesign --force --sign - -r='designated => identifier "com.cocoxcao.menubuddy"' "$APP"
 echo "Built $APP"
 
 if [[ "${1:-}" == "--install" ]]; then
