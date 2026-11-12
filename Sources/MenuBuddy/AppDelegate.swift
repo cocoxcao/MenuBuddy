@@ -20,7 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if UserDefaults.standard.object(forKey: positionKey) == nil {
             UserDefaults.standard.set(110.0, forKey: positionKey)
         }
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)   // the pill is 28 pt wide; a square item (~22 pt) cuts its sides
         statusItem.autosaveName = "MenuBuddy"
         if let button = statusItem.button {
             button.target = self
