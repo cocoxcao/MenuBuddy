@@ -2,6 +2,9 @@
 
 Older versions: see the GitHub releases.
 
+## 0.3.4 — 2026-11-12
+- Safer updates: the install script accepts only an app signed with the author's own certificate, and Check for Updates uses the exact release it offers.
+
 ## 0.3.3 — 2026-11-11
 - Fix: the pill icon in the menu bar is no longer cut off at the sides.
 
