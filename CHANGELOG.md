@@ -2,6 +2,9 @@
 
 Older versions: see the GitHub releases.
 
+## 0.3.3 — 2026-11-11
+- Fix: the pill icon in the menu bar is no longer cut off at the sides.
+
 ## 0.3.2 — 2026-11-11
 - New icon: a pill with rings spreading from its top-right corner. It is the menu bar icon (dark pill, white rings, the same on every menu bar) and, on the black tile, the app icon. Themes still change the panel's look.
 
