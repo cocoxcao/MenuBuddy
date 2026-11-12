@@ -78,6 +78,12 @@ main() {   # everything runs from here, so a half-downloaded script does nothing
     local app=$tmp/app/MenuBuddy.app
     [[ -d $app ]] || fail "the download has no MenuBuddy.app."
     codesign --verify --deep --strict "$app" 2>/dev/null || fail "the app's code signature doesn't check out; nothing was installed."
+    # A download must be signed by the MenuBuddy author's own certificate, not just by anyone.
+    # (A --from-source build is made on this Mac, so it can't carry that certificate.)
+    if [[ ${1:-} != --from-source ]]; then
+        codesign --verify --strict -R='identifier "com.cocoxcao.menubuddy" and certificate leaf = H"9c0e986b23390a2a292e9b575f512a7903e61fdc"' "$app" 2>/dev/null \
+            || fail "the app isn't signed by the MenuBuddy author; nothing was installed."
+    fi
 
     # Update the copy that's already there (Applications or ~/Applications), else /Applications.
     local dest=${MENUBUDDY_DEST:-}

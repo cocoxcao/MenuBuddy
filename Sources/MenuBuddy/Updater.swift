@@ -8,6 +8,12 @@ enum Updater {
     private static let latest = URL(string: "https://api.github.com/repos/cocoxcao/MenuBuddy/releases/latest")!
     private static let releases = URL(string: "https://github.com/cocoxcao/MenuBuddy/releases/latest")!
     private static let installer = "https://raw.githubusercontent.com/cocoxcao/MenuBuddy/main/install.sh"
+    /// The update uses install.sh and the zip of that exact release tag, not whatever is on main now.
+    private static func pinned(_ tag: String) -> (script: String, base: String)? {
+        guard tag.range(of: #"^[0-9]+\.[0-9]+\.[0-9]+$"#, options: .regularExpression) != nil else { return nil }
+        return ("https://raw.githubusercontent.com/cocoxcao/MenuBuddy/v\(tag)/install.sh",
+                "https://github.com/cocoxcao/MenuBuddy/releases/download/v\(tag)")
+    }
 
     static var current: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0" }
     /// "Version 0.4.6 (build 12)" for Settings.
@@ -81,19 +87,21 @@ enum Updater {
         alert.addButton(withTitle: "Later")
         alert.addButton(withTitle: "What's New")
         switch alert.runModal() {
-        case .alertFirstButtonReturn: install()
+        case .alertFirstButtonReturn: install(latest)
         case .alertThirdButtonReturn: NSWorkspace.shared.open(releases)
         default: break
         }
     }
 
     /// Runs install.sh in the background into this copy's folder; it outlives MenuBuddy quitting.
-    private static func install() {
+    private static func install(_ tag: String) {
+        guard let pin = pinned(tag) else { NSWorkspace.shared.open(releases); return }
         let folder = Bundle.main.bundleURL.deletingLastPathComponent().path
         let log = FileManager.default.temporaryDirectory.appendingPathComponent("menubuddy-update.log").path
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        process.arguments = ["-c", "curl -fsSL \"$1\" | MENUBUDDY_DEST=\"$2\" bash > \"$3\" 2>&1", "update", installer, folder, log]
+        process.arguments = ["-c", "curl -fsSL \"$1\" | MENUBUDDY_BASE=\"$4\" MENUBUDDY_DEST=\"$2\" bash > \"$3\" 2>&1",
+                             "update", pin.script, folder, log, pin.base]
         do {
             try process.run()
         } catch {
