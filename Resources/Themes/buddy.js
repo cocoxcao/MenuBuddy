@@ -329,7 +329,11 @@
       else devStart();
     },
     setApps(list, msg, opts) {
-      apps = Array.isArray(list) ? list : [];
+      const next = Array.isArray(list) ? list : [];
+      const same = built && (msg || null) === message && next.length === apps.length
+        && next.every((a, i) => a && apps[i] && a.id === apps[i].id && a.name === apps[i].name && a.icon === apps[i].icon);
+      if (same) return;                       // the same apps: the page stays as it is (a rebuild keeps memory in WebKit)
+      apps = next;
       message = msg || null;
       render(!!(opts && opts.quiet));
     },

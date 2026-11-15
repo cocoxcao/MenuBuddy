@@ -2,6 +2,9 @@
 
 Older versions: see the GitHub releases.
 
+## 0.3.6 — 2026-11-15
+- Fixed the rest of the memory leak, the bigger part: while the drop-down was closed, MenuBuddy rebuilt its page every 30 seconds, and each rebuild kept about 0.4 MB (about 1 GB a day). The cause: the list of your menu bar apps was written out with its fields in a different order each time, so the same list looked new. The list is now written the same way every time, and the page rebuilds only when your apps really change.
+
 ## 0.3.5 — 2026-11-14
 - Fixed a memory leak: the drop-down's web page grew about 0.5 MB each time it opened, and never gave it back (2.2 GB after two days). The page is now built only when your menu bar apps change; an open replays its animations. After 300 opens it gives the memory back within seconds, in every theme.
 

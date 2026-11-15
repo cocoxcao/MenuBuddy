@@ -238,7 +238,10 @@ final class AppModel: ObservableObject {
 
     static func json(_ items: [(String, String, IconSource)]) -> String {
         let list = items.map { ["id": $0.0, "name": $0.1, "icon": IconRenderer.dataURL($0.2)] }
-        guard let data = try? JSONSerialization.data(withJSONObject: list) else { return "[]" }
+        // Sorted keys: the same list must give the same text. Without them the order of a dictionary's
+        // keys changes from one build to the next, every 30-second scan looked like a new list, and
+        // the page was built again each time (2.2 GB in two days, 2026-11-14).
+        guard let data = try? JSONSerialization.data(withJSONObject: list, options: [.sortedKeys]) else { return "[]" }
         return String(decoding: data, as: UTF8.self)
     }
 
