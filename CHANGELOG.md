@@ -2,6 +2,9 @@
 
 Older versions: see the GitHub releases.
 
+## 0.3.5 — 2026-11-14
+- Fixed a memory leak: the drop-down's web page grew about 0.5 MB each time it opened, and never gave it back (2.2 GB after two days). The page is now built only when your menu bar apps change; an open replays its animations. After 300 opens it gives the memory back within seconds, in every theme.
+
 ## 0.3.4 — 2026-11-12
 - Safer updates: the install script accepts only an app signed with the author's own certificate, and Check for Updates uses the exact release it offers.
 

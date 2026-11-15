@@ -10,9 +10,13 @@
   apps: [{ id, name, icon }] in menu-bar order, left to right. icon is an image URL (a PNG data URL
   from the app, an SVG data URL in dev mode). Any count from 1 to ~40 must lay out sensibly.
 
-  render(apps, stage, h)  builds the theme into #stage. It is called again every time the panel
-                          opens, so entry animations replay. Give containers explicit sizes: the
-                          stage's size (padding included) becomes the panel window's size.
+  render(apps, stage, h)  builds the theme into #stage when the app list changes. Give containers
+                          explicit sizes: the stage's size (padding included) becomes the panel
+                          window's size.
+  shown()                 optional; called each time the panel opens again with the same apps, before
+                          the entry animations replay. Reset a theme's own state here (a half-typed
+                          code…). The page is not built again on an open: in WebKit, every rebuild
+                          kept about 0.5 MB that never came back (2.2 GB after two days, 2026-11-14).
   hot(app | null)         optional; updates a sign/label with the app under the pointer.
   action(name, el)        optional; a press-and-release on an element with data-action="name"
                           that isn't an app (keypad keys, coin slots…). It gets class "over" while
@@ -154,8 +158,12 @@
     });
   }
 
+  /** The stage holds the current list (built by render). */
+  let built = false;
+
   function render(quiet) {
     if (!theme || !stage) return;
+    built = true;
     cancelDrag();
     hotId = null;
     stage.innerHTML = '';
@@ -164,6 +172,26 @@
     if (!apps.length) (theme.empty || defaultEmpty)(stage, message || 'Nothing up in the menu bar yet.', h);
     else theme.render(apps, stage, h);
     if (quiet) stage.classList.add('quiet');
+    if (theme.hot) theme.hot(null);
+    report();
+  }
+
+  /** The panel opens again with the same apps: the same elements, the entry animations replayed. */
+  function replay() {
+    if (!theme || !stage) return;
+    cancelDrag();
+    hotId = null;
+    stage.querySelectorAll('.hot').forEach((n) => n.classList.remove('hot'));
+    stage.querySelectorAll('.hot-scope').forEach((n) => n.classList.remove('hot-scope'));
+    setOver(null);
+    stage.classList.remove('quiet');
+    if (theme.shown) theme.shown();
+    // CSS animations only: an animation a theme starts from script (a vend) is not an entry.
+    for (const a of stage.getAnimations({ subtree: true })) {
+      if (typeof CSSAnimation !== 'undefined' && !(a instanceof CSSAnimation)) continue;
+      a.cancel();
+      a.play();
+    }
     if (theme.hot) theme.hot(null);
     report();
   }
@@ -305,7 +333,7 @@
       message = msg || null;
       render(!!(opts && opts.quiet));
     },
-    show() { render(false); },
+    show() { if (built) replay(); else render(false); },
     pointer(x, y) {
       if (press) { dragTo(x, y); return; }
       const t = targetAt(x, y);

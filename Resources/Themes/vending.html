@@ -226,6 +226,17 @@ function vend() {
 }
 
 Buddy.theme({
+  // The panel opens again: a fresh start, as a new render gave before (the coins paid stay).
+  shown() {
+    entry = '';
+    picked = null;
+    message = null;
+    clearTimeout(messageTimer);
+    if (coinBox) coinBox.querySelectorAll('.coin-drop').forEach((n) => n.remove());
+    document.querySelectorAll('.coil.spin').forEach((n) => n.classList.remove('spin'));
+    if (lcd) lcd.classList.remove('flash');
+    showLCD();
+  },
   render(list, stage, h) {
     H = h;
     apps = list;
