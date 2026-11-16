@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build MenuBuddy.app with the Xcode Command Line Tools (full Xcode not needed).
-#   scripts/build.sh            → build/MenuBuddy.app
+#   scripts/build.sh            → build/app.noindex/MenuBuddy.app
 #   scripts/build.sh --install  → also copy to ~/Applications and launch it
 #   scripts/build.sh --release  → universal (Apple silicon + Intel) build zipped to build/MenuBuddy.zip,
 #                                 for sharing (see the signing note below)
@@ -39,7 +39,7 @@ if [[ ! -f Resources/AppIcon.icns ]]; then
     build/make-icon Resources/AppIcon.icns
 fi
 
-APP=build/MenuBuddy.app
+APP=build/app.noindex/MenuBuddy.app   # .noindex: Spotlight does not list this build copy
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp build/MenuBuddy "$APP/Contents/MacOS/MenuBuddy"

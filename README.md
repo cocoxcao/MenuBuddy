@@ -155,7 +155,7 @@ Accessibility only to list your menu bar apps and click the one you pick.
 ## Build
 
 ```sh
-scripts/build.sh            # → build/MenuBuddy.app
+scripts/build.sh            # → build/app.noindex/MenuBuddy.app
 scripts/build.sh --install  # → ~/Applications/MenuBuddy.app, and launch it
 scripts/build.sh --release  # → build/MenuBuddy.zip: universal, hardened runtime, no dev tools
 ```
@@ -186,8 +186,8 @@ Check a theme quickly:
 
 ```sh
 scripts/shoot.sh vending "hot=2"        # headless Chrome, sample apps → build/shots/
-build/MenuBuddy.app/Contents/MacOS/MenuBuddy --snapshot vending out.png --hot 2   # WebKit, your running apps' icons
-MENUBUDDY_THEMES=$PWD/Resources/Themes build/MenuBuddy.app/Contents/MacOS/MenuBuddy   # edit themes without rebuilding
+build/app.noindex/MenuBuddy.app/Contents/MacOS/MenuBuddy --snapshot vending out.png --hot 2   # WebKit, your running apps' icons
+MENUBUDDY_THEMES=$PWD/Resources/Themes build/app.noindex/MenuBuddy.app/Contents/MacOS/MenuBuddy   # edit themes without rebuilding
 ```
 
 Designs: the canvas "Menu Bar Buddy looks" on claude.ai.
